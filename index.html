@@ -29,7 +29,7 @@ h3 { font-size:11px; font-weight:500; color:var(--text2); margin:10px 0 4px; }
 .scenario-bar { display:flex; gap:6px; padding:10px 24px; border-bottom:1px solid var(--border); align-items:center; flex-wrap:wrap; }
 .scenario-bar>span { font-size:11px; color:var(--text2); }
 
-.layout { display:grid; grid-template-columns:300px 1fr; min-height:calc(100vh - 95px); }
+.layout { display:grid; grid-template-columns:320px 1fr; min-height:calc(100vh - 95px); }
 .controls { border-right:1px solid var(--border); overflow-y:auto; max-height:calc(100vh - 95px); }
 .charts-area { padding:16px 24px; overflow-y:auto; max-height:calc(100vh - 95px); }
 
@@ -57,10 +57,24 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:14px; h
 .kpi .vl { font-size:20px; font-weight:700; }
 .kpi .sb { font-size:10px; color:var(--text2); margin-top:1px; }
 
+.crossover-msg { font-size:13px; padding:10px 14px; border-radius:6px; margin-bottom:16px; font-weight:500; }
+
 .tbl { width:100%; border-collapse:collapse; font-size:12px; margin-top:12px; }
 .tbl th { text-align:left; padding:6px 8px; border-bottom:2px solid var(--border); color:var(--text2); font-weight:500; }
 .tbl td { padding:5px 8px; border-bottom:1px solid var(--border); }
 .surplus { color:var(--green); } .deficit { color:var(--red); }
+
+/* Project library */
+.proj-panel { padding:14px 16px; border-bottom:1px solid var(--border); }
+.proj-search { width:100%; padding:6px 10px; background:var(--bg); border:1px solid var(--border); border-radius:4px; color:var(--text); font-family:inherit; font-size:12px; margin-bottom:8px; outline:none; }
+.proj-search:focus { border-color:var(--green); }
+.proj-list { max-height:300px; overflow-y:auto; }
+.proj-item { display:flex; align-items:flex-start; gap:8px; padding:5px 0; border-bottom:1px solid rgba(46,51,72,.3); font-size:11px; }
+.proj-item input[type=checkbox] { accent-color:var(--green); margin-top:2px; flex-shrink:0; }
+.proj-item .proj-name { font-weight:500; color:var(--text); }
+.proj-item .proj-detail { color:var(--text2); font-size:10px; }
+.proj-summary { font-size:11px; color:var(--text2); margin-top:8px; padding:6px 0; border-top:1px solid var(--border); }
+.proj-cat { font-size:10px; font-weight:600; color:var(--cyan); text-transform:uppercase; letter-spacing:.5px; margin:8px 0 4px; }
 
 .toast { position:fixed; bottom:24px; right:24px; background:var(--green2); color:#fff; padding:10px 20px; border-radius:8px; font-size:13px; opacity:0; transition:opacity .3s; pointer-events:none; z-index:100; }
 .toast.show { opacity:1; }
@@ -127,7 +141,7 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:14px; h
 
     <div class="divider"></div>
     <h3>Cost per ExaFLOP-hour ($M, blended)</h3>
-    <div class="info">How efficiently $ converts to compute. Falls as hardware improves. ~$0.36M today (H100 at-scale), declining.</div>
+    <div class="info">How efficiently $ converts to compute. Falls as hardware improves.</div>
     <div class="slider-row">
       <label>2025 cost</label>
       <input type="range" id="d-cost-25" min="10" max="80" step="2" value="36">
@@ -141,7 +155,7 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:14px; h
 
     <div class="divider"></div>
     <h3>Inference Efficiency Multiplier (by 2028)</h3>
-    <div class="info">Quantization, speculative decoding, distillation. More tokens per FLOP.</div>
+    <div class="info">Quantization, speculative decoding, distillation.</div>
     <div class="slider-row">
       <label>Efficiency gain</label>
       <input type="range" id="d-eff" min="1" max="20" step="1" value="6">
@@ -154,7 +168,7 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:14px; h
     <h2>Supply</h2>
 
     <h3>AI Datacenter Power (GW online by 2028)</h3>
-    <div class="info">Baseline: ~8 GW AI-capable today, ~37 GW by 2028 (JLL/CBRE base case).</div>
+    <div class="info">~8 GW AI-capable today. Toggle projects below to adjust.</div>
     <div class="slider-row">
       <label>2028 power</label>
       <input type="range" id="s-power" min="15" max="65" step="1" value="37">
@@ -162,7 +176,7 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:14px; h
     </div>
 
     <h3>Compute Density (ExaFLOPS per GW)</h3>
-    <div class="info">Improves with each GPU gen. ~7 EF/GW today (H100), ~19 EF/GW by 2028 (Rubin).</div>
+    <div class="info">~7 EF/GW today (H100), ~19 EF/GW by 2028 (Rubin).</div>
     <div class="slider-row">
       <label>2025 density</label>
       <input type="range" id="s-den-25" min="3" max="15" step="1" value="7">
@@ -175,7 +189,6 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:14px; h
     </div>
 
     <h3>Effective Utilization</h3>
-    <div class="info">Real-world GPU utilization (latency SLAs, batching overhead). Typically 20-40%.</div>
     <div class="slider-row">
       <label>Utilization</label>
       <input type="range" id="s-util" min="10" max="60" step="1" value="30">
@@ -183,24 +196,34 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:14px; h
     </div>
 
     <h3>Supply Constraint Factor</h3>
-    <div class="info">CoWoS packaging, HBM, permitting delays. 1.0 = no constraints, lower = constrained.</div>
+    <div class="info">CoWoS, HBM, permitting. 1.0 = unconstrained.</div>
     <div class="slider-row">
-      <label>Constraint factor</label>
+      <label>Constraint</label>
       <input type="range" id="s-constraint" min="50" max="100" step="1" value="78">
       <span class="val" id="v-constraint">0.78</span>
     </div>
+  </div>
+
+  <!-- PROJECT LIBRARY -->
+  <div class="proj-panel">
+    <h2>Project Library</h2>
+    <div class="info">Toggle projects on/off to add or remove their power (GW) from the supply forecast. All projects are ON by default in the base case.</div>
+    <input type="text" class="proj-search" id="proj-search" placeholder="Search projects...">
+    <div class="proj-list" id="proj-list"></div>
+    <div class="proj-summary" id="proj-summary"></div>
   </div>
 </div>
 
 <!-- === CHARTS === -->
 <div class="charts-area">
   <div class="kpi-row" id="kpis"></div>
+  <div class="crossover-msg" id="crossover-msg"></div>
 
   <div class="chart-box chart-main"><canvas id="mainChart"></canvas></div>
 
   <div class="tab-bar">
     <div class="tab active" data-t="breakdown" onclick="tab(this)">Supply vs Demand Stack</div>
-    <div class="tab" data-t="revenue" onclick="tab(this)">AI Revenue ($B)</div>
+    <div class="tab" data-t="revenue" onclick="tab(this)">AI Spend ($B)</div>
     <div class="tab" data-t="gap" onclick="tab(this)">Surplus / Deficit</div>
   </div>
   <div class="chart-box chart-sec"><canvas id="secChart"></canvas></div>
@@ -209,14 +232,13 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:14px; h
 
   <div class="foot">
     <strong>Model:</strong> Demand = Global IT Spend &times; AI % &times; (1 / cost-per-EF-hr) &times; hours/yr, split into training + inference.
-    Inference demand reduced by efficiency multiplier (distillation, quantization, speculative decoding).
-    Supply = AI-capable GW &times; compute density (EF/GW) &times; utilization &times; constraint factor.
-    Gap = Supply &minus; Demand. Negative = inference crunch.
+    Inference demand reduced by efficiency multiplier. Supply = AI-capable GW &times; density (EF/GW) &times; utilization &times; constraint.
+    Gap = Supply &minus; Demand. Negative = compute deficit.
     <br><br>
-    <strong>Key assumptions:</strong> Global IT spend $5.5T (2025, Gartner). AI share = CIO-allocated budget (Deloitte: 8-13% 2025, rising).
-    Cost/EF-hr declines with GPU generations (H100 &rarr; B200 &rarr; Rubin). Efficiency gains compound on inference only, not training.
+    <strong>Key assumptions:</strong> Global IT spend $5.5T (2025, Gartner). AI share = CIO-allocated budget (Deloitte: 8-13% in 2025).
+    Cost/EF-hr declines with GPU generations (H100 &rarr; B200 &rarr; Rubin). Efficiency gains apply to inference only.
     <br><br>
-    <strong>Etach Capital Research</strong> &mdash; March 2026 &nbsp;|&nbsp; Beads: gt-5h4, gt-l8t, gt-16w, gt-hs4, gt-jju, gt-f89
+    <strong>Etach Capital Research</strong> &mdash; March 2026
   </div>
 </div>
 </div>
@@ -225,13 +247,77 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:14px; h
 
 <script>
 // ================================================================
+// PROJECTS DATABASE
+// ================================================================
+const PROJECTS = [
+  // --- US HYPERSCALER ---
+  { cat:'US Hyperscaler', name:'Stargate (OpenAI / SoftBank / Oracle)', loc:'Abilene, TX', mw:1200, costB:100, timeline:'Phase 1: 2026', status:'Under construction', on:true },
+  { cat:'US Hyperscaler', name:'Microsoft US DC Expansion', loc:'WI, IL, VA, AZ, IN', mw:2000, costB:80, timeline:'2025-2027', status:'Under construction', on:true },
+  { cat:'US Hyperscaler', name:'Google US DC Expansion', loc:'MO, OH, AZ, OK, IN, NE', mw:1500, costB:75, timeline:'2025-2027', status:'Under construction', on:true },
+  { cat:'US Hyperscaler', name:'Amazon / AWS US AI DCs', loc:'VA, OR, OH, MS, IN, NY', mw:1800, costB:100, timeline:'2025-2028', status:'Under construction', on:true },
+  { cat:'US Hyperscaler', name:'Meta AI DCs (incl. Louisiana mega-campus)', loc:'LA, IA, TX, OH', mw:2200, costB:65, timeline:'2026-2028', status:'Under construction', on:true },
+  { cat:'US Hyperscaler', name:'Oracle AI DC Buildout', loc:'Nashville, Abilene, Chicago', mw:800, costB:40, timeline:'2025-2027', status:'Under construction', on:true },
+
+  // --- AI-NATIVE CLOUD ---
+  { cat:'AI-Native Cloud', name:'xAI Colossus (Memphis Phase 1)', loc:'Memphis, TN', mw:150, costB:3, timeline:'Operational Q4 2024', status:'Operational', on:true },
+  { cat:'AI-Native Cloud', name:'xAI Memphis Expansion (1M GPU target)', loc:'Memphis, TN', mw:1000, costB:10, timeline:'2026-2027', status:'Announced', on:true },
+  { cat:'AI-Native Cloud', name:'CoreWeave US DCs (14+ sites)', loc:'NJ, TX, IL, VA', mw:600, costB:12, timeline:'2024-2026', status:'Partially operational', on:true },
+  { cat:'AI-Native Cloud', name:'Lambda Labs Expansion', loc:'TX, UT', mw:150, costB:1.5, timeline:'2025-2026', status:'Under construction', on:true },
+  { cat:'AI-Native Cloud', name:'Crusoe Energy AI DCs', loc:'Abilene TX, WY, MT', mw:200, costB:3, timeline:'2025-2026', status:'Under construction', on:true },
+  { cat:'AI-Native Cloud', name:'Applied Digital (Ellendale)', loc:'Ellendale, ND', mw:300, costB:1.6, timeline:'Phase 1: 2025', status:'Under construction', on:true },
+  { cat:'AI-Native Cloud', name:'Applied Digital (Jamestown)', loc:'Jamestown, ND', mw:400, costB:2, timeline:'2025-2027', status:'Under construction', on:true },
+  { cat:'AI-Native Cloud', name:'Project Rainier (AWS / Anthropic)', loc:'US (OR or VA)', mw:200, costB:4, timeline:'2025', status:'Under construction', on:true },
+
+  // --- COLO / INFRASTRUCTURE ---
+  { cat:'Colo / Infra', name:'Blackstone / QTS AI Portfolio', loc:'AZ, TX, IL, VA', mw:500, costB:25, timeline:'2025-2028', status:'Under construction', on:true },
+  { cat:'Colo / Infra', name:'Digital Realty AI Expansion', loc:'VA, TX, IL, Amsterdam, SG', mw:400, costB:7, timeline:'2025-2027', status:'Under construction', on:true },
+  { cat:'Colo / Infra', name:'Equinix xScale AI Expansion', loc:'Global (Paris, Tokyo, Dallas)', mw:300, costB:5, timeline:'2025-2027', status:'Under construction', on:true },
+
+  // --- NUCLEAR ---
+  { cat:'Nuclear', name:'Three Mile Island Restart (Constellation / MSFT)', loc:'Middletown, PA', mw:835, costB:1.6, timeline:'Target: 2028', status:'NRC relicensing', on:true },
+  { cat:'Nuclear', name:'Susquehanna (Talen / AWS)', loc:'Berwick, PA', mw:960, costB:3, timeline:'Phase 1: 2026', status:'Under construction', on:true },
+  { cat:'Nuclear', name:'Palisades Restart (Holtec)', loc:'Covert Twp, MI', mw:800, costB:1.9, timeline:'Target: 2026', status:'Restart underway', on:true },
+  { cat:'Nuclear', name:'Kairos SMR (Google PPA)', loc:'SE US (TBD)', mw:500, costB:2, timeline:'2030+', status:'NRC licensing', on:false },
+  { cat:'Nuclear', name:'NuScale SMR', loc:'US (various)', mw:462, costB:4, timeline:'2029-2030', status:'Seeking customers', on:false },
+  { cat:'Nuclear', name:'Oklo Aurora SMR', loc:'Idaho', mw:15, costB:0.5, timeline:'2027 (optimistic)', status:'NRC application', on:false },
+
+  // --- MIDDLE EAST ---
+  { cat:'Middle East', name:'Saudi HUMAIN Mega AI Campus', loc:'Saudi Arabia', mw:1000, costB:100, timeline:'2026-2028', status:'Early construction', on:true },
+  { cat:'Middle East', name:'UAE Stargate / MGX AI Infra', loc:'Abu Dhabi, UAE', mw:500, costB:30, timeline:'2025-2028', status:'Partnerships forming', on:true },
+  { cat:'Middle East', name:'Qatar AI DC Initiative', loc:'Qatar', mw:200, costB:10, timeline:'2026-2028', status:'Announced', on:false },
+
+  // --- ASIA PACIFIC ---
+  { cat:'Asia Pacific', name:'Japan National AI Compute', loc:'Hokkaido, Chiba, Osaka', mw:300, costB:15, timeline:'2025-2027', status:'Under construction', on:true },
+  { cat:'Asia Pacific', name:'SoftBank Japan AI Supercomputer', loc:'Japan (Hokkaido)', mw:200, costB:4, timeline:'2025-2026', status:'Under construction', on:true },
+  { cat:'Asia Pacific', name:'India AI Mission + Private Sector', loc:'Gujarat, Maharashtra', mw:200, costB:2, timeline:'2025-2027', status:'Announced', on:true },
+  { cat:'Asia Pacific', name:'Singapore AI DC Expansion', loc:'Singapore', mw:300, costB:8, timeline:'2025-2028', status:'Under construction', on:true },
+  { cat:'Asia Pacific', name:'Malaysia (Johor) AI DCs', loc:'Johor, Malaysia', mw:1000, costB:15, timeline:'2025-2028', status:'Under construction', on:true },
+  { cat:'Asia Pacific', name:'Indonesia AI/DC Expansion', loc:'Jakarta, Batam', mw:300, costB:5, timeline:'2025-2028', status:'Announced', on:true },
+  { cat:'Asia Pacific', name:'South Korea National AI Compute', loc:'Sejong, Chuncheon', mw:200, costB:5, timeline:'2025-2027', status:'Under construction', on:true },
+  { cat:'Asia Pacific', name:'Australia AI DCs (MSFT, AWS)', loc:'Sydney, Melbourne', mw:200, costB:4, timeline:'2025-2027', status:'Under construction', on:true },
+
+  // --- EUROPE ---
+  { cat:'Europe', name:'EU AI Factories Initiative (7+ sites)', loc:'FI, IT, ES, DE, LU, CZ', mw:200, costB:4, timeline:'2025-2027', status:'Procurement', on:true },
+  { cat:'Europe', name:'France National AI Compute', loc:'Paris, Marseille', mw:100, costB:3, timeline:'2025-2027', status:'Under construction', on:true },
+  { cat:'Europe', name:'Germany National AI (incl. JUPITER)', loc:'Frankfurt, Juelich', mw:100, costB:2, timeline:'2025-2027', status:'Under construction', on:true },
+  { cat:'Europe', name:'UK Sovereign AI DCs', loc:'Northumberland, Scotland', mw:500, costB:10, timeline:'2026-2028', status:'Announced', on:true },
+  { cat:'Europe', name:'UK Isambard-AI + Dawn', loc:'Bristol, Cambridge', mw:15, costB:0.4, timeline:'Operational', status:'Operational', on:true },
+  { cat:'Europe', name:'NVIDIA / Microsoft Nordic AI DCs', loc:'Sweden, Finland', mw:200, costB:3.5, timeline:'2025-2026', status:'Under construction', on:true },
+  { cat:'Europe', name:'Norway Green AI DCs (Green Mountain)', loc:'Norway', mw:150, costB:1, timeline:'2025-2027', status:'Expanding', on:true },
+  { cat:'Europe', name:'Iceland AI/HPC (Verne, atNorth)', loc:'Keflavik, Iceland', mw:100, costB:0.5, timeline:'2025-2027', status:'Expanding', on:true },
+  { cat:'Europe', name:'Canada AI DCs (Alberta, Quebec)', loc:'Canada', mw:300, costB:5, timeline:'2025-2028', status:'Under construction', on:true },
+
+  // --- CHINA ---
+  { cat:'China', name:'China East Data West Compute (all projects)', loc:'Beijing, Shanghai, Guizhou, Inner Mongolia', mw:3000, costB:50, timeline:'Ongoing-2028', status:'Under construction', on:true },
+];
+
+// ================================================================
 // QUARTERS
 // ================================================================
 const QS = [];
 for (let y = 2024; y <= 2028; y++) for (let q = 1; q <= 4; q++) QS.push(`Q${q}-${String(y).slice(2)}`);
-const N = QS.length; // 20
+const N = QS.length;
 
-// Helper: linear interp from value at Q1-25 (idx 4) to Q4-28 (idx 19)
 function lerp(v25, v28, i) {
   if (i <= 4) return v25;
   if (i >= 19) return v28;
@@ -249,7 +335,7 @@ const SC = {
 };
 
 // ================================================================
-// UI READ / WRITE
+// UI
 // ================================================================
 const $ = id => document.getElementById(id);
 const FIELDS = [
@@ -287,56 +373,101 @@ function labels() {
 }
 
 // ================================================================
+// PROJECT LIBRARY UI
+// ================================================================
+function renderProjects(filter) {
+  const list = $('proj-list');
+  const q = (filter || '').toLowerCase();
+  let html = '';
+  let lastCat = '';
+  let totalOnMW = 0;
+  let totalOffMW = 0;
+
+  for (let i = 0; i < PROJECTS.length; i++) {
+    const p = PROJECTS[i];
+    if (q && !p.name.toLowerCase().includes(q) && !p.cat.toLowerCase().includes(q) && !p.loc.toLowerCase().includes(q)) continue;
+    if (p.cat !== lastCat) {
+      html += `<div class="proj-cat">${p.cat}</div>`;
+      lastCat = p.cat;
+    }
+    const gw = (p.mw / 1000).toFixed(1);
+    html += `<div class="proj-item">
+      <input type="checkbox" data-idx="${i}" ${p.on ? 'checked' : ''}>
+      <div>
+        <div class="proj-name">${p.name}</div>
+        <div class="proj-detail">${p.loc} &bull; ${gw} GW &bull; $${p.costB}B &bull; ${p.timeline} &bull; ${p.status}</div>
+      </div>
+    </div>`;
+  }
+  list.innerHTML = html;
+
+  // Wire checkboxes
+  list.querySelectorAll('input[type=checkbox]').forEach(cb => {
+    cb.addEventListener('change', () => {
+      PROJECTS[+cb.dataset.idx].on = cb.checked;
+      updateProjectSummary();
+      syncPowerSlider();
+      markCustom();
+      update();
+    });
+  });
+
+  updateProjectSummary();
+}
+
+function updateProjectSummary() {
+  let onMW = 0, offMW = 0, onCount = 0;
+  PROJECTS.forEach(p => { if (p.on) { onMW += p.mw; onCount++; } else { offMW += p.mw; } });
+  $('proj-summary').innerHTML = `<strong>${onCount}</strong> projects active &bull; <span style="color:var(--green)">${(onMW/1000).toFixed(1)} GW included</span> &bull; <span style="color:var(--text2)">${(offMW/1000).toFixed(1)} GW excluded</span>`;
+}
+
+function syncPowerSlider() {
+  // Set power slider based on project selections (with 50% realization discount)
+  let totalMW = 0;
+  PROJECTS.forEach(p => { if (p.on) totalMW += p.mw; });
+  // Apply ~40% realization rate (not all announced = built by 2028) + existing 8 GW baseline
+  const realized = 8 + (totalMW / 1000) * 0.40;
+  const clamped = Math.max(15, Math.min(65, Math.round(realized)));
+  $('s-power').value = clamped;
+  labels();
+}
+
+// ================================================================
 // COMPUTE ENGINE
 // ================================================================
 function compute(p) {
-  const IT_2025 = 5500; // $5.5T = 5500 $B
-  const HRS_PER_YEAR = 8760;
-  const out = {
-    supply: [], demand: [], demandTrain: [], demandInf: [],
-    gap: [], aiRevenue: [], itSpend: [], aiPct: [],
-    supplyGW: [],
-  };
+  const IT_2025 = 5500;
+  const HRS = 8760;
+  const out = { supply:[], demand:[], demandTrain:[], demandInf:[], gap:[], aiRevenue:[], itSpend:[], aiPct:[], supplyGW:[] };
 
   for (let i = 0; i < N; i++) {
-    // Year fraction from Q1-2025 (index 4)
-    const yrsFrom25 = (i - 4) / 4; // can be negative for 2024
+    const yrsFrom25 = (i - 4) / 4;
 
-    // --- IT SPEND ---
-    const itGrowth = Math.pow(1 + p.itCagr / 100, yrsFrom25);
-    const itSpend = IT_2025 * itGrowth; // $B
+    // IT spend (annualized $B)
+    const itSpend = IT_2025 * Math.pow(1 + p.itCagr / 100, yrsFrom25);
 
-    // --- AI % ---
+    // AI %
     const aiPct = lerp(p.aiPct25, p.aiPct28, i) / 100;
-    const aiSpend = itSpend * aiPct; // $B
+    const aiSpend = itSpend * aiPct;
 
-    // --- SPLIT: training vs inference ---
+    // Split
     const infShare = lerp(p.inf25, p.inf28, i) / 100;
-    const trainSpend = aiSpend * (1 - infShare); // $B
-    const infSpend = aiSpend * infShare; // $B
+    const trainSpend = aiSpend * (1 - infShare);
+    const infSpend = aiSpend * infShare;
 
-    // --- COST PER EF-HOUR (in $M) ---
-    const costPerEFH = lerp(p.cost25, p.cost28, i) / 100; // $M
+    // Cost per EF-hour ($M)
+    const costPerEFH = lerp(p.cost25, p.cost28, i) / 100;
 
-    // --- DEMAND IN ExaFLOPS (sustained) ---
-    // $B of spend / ($M per EF-hr) = thousands of EF-hours purchased per year
-    // To get sustained ExaFLOPS: (spend_$B * 1000 / costPerEFH_$M) / 8760
-    const trainEFHrs = (trainSpend * 1000) / costPerEFH; // EF-hours/year
-    const infEFHrs = (infSpend * 1000) / costPerEFH;
-
-    const trainEF = trainEFHrs / HRS_PER_YEAR; // sustained ExaFLOPS
-    // Apply inference efficiency gain
+    // Demand in sustained ExaFLOPS
+    const trainEF = (trainSpend * 1000 / costPerEFH) / HRS;
     const effMult = lerp(1, p.eff, i);
-    const infEF = (infEFHrs / HRS_PER_YEAR) / effMult;
-
+    const infEF = ((infSpend * 1000 / costPerEFH) / HRS) / effMult;
     const totalDemand = trainEF + infEF;
 
-    // --- SUPPLY ---
-    const powerScale = p.power / 37;
-    const powerGW = lerp(8, p.power, i); // GW ramp
-    const density = lerp(p.den25, p.den28, i); // EF per GW
-    const rawSupply = powerGW * density;
-    const supply = rawSupply * (p.util / 100) * (p.constraint / 100);
+    // Supply
+    const powerGW = lerp(8, p.power, i);
+    const density = lerp(p.den25, p.den28, i);
+    const supply = powerGW * density * (p.util / 100) * (p.constraint / 100);
 
     out.supply.push(supply);
     out.demand.push(totalDemand);
@@ -358,45 +489,44 @@ let mainChart, secChart;
 let activeTab = 'breakdown';
 
 function initCharts() {
-  const font = { family: "'SF Mono','Fira Code',monospace", size: 11 };
-  const gridColor = 'rgba(46,51,72,.5)';
+  const font = { family:"'SF Mono','Fira Code',monospace", size:11 };
+  const gc = 'rgba(46,51,72,.5)';
 
   mainChart = new Chart($('mainChart'), {
-    type: 'line',
-    data: { labels: QS, datasets: [
-      { label: 'Effective Supply (ExaFLOPS)', data: [], borderColor: 'rgba(52,211,153,1)', backgroundColor: 'rgba(52,211,153,.08)', fill: true, tension: .3, borderWidth: 2.5, pointRadius: 2 },
-      { label: 'Total Demand (ExaFLOPS)', data: [], borderColor: 'rgba(248,113,113,1)', backgroundColor: 'rgba(248,113,113,.08)', fill: true, tension: .3, borderWidth: 2.5, pointRadius: 2 },
-      { label: 'Training Demand', data: [], borderColor: 'rgba(251,191,36,.6)', borderDash: [5,3], tension: .3, borderWidth: 1.5, pointRadius: 0, backgroundColor: 'transparent' },
-      { label: 'Inference Demand', data: [], borderColor: 'rgba(167,139,250,.6)', borderDash: [5,3], tension: .3, borderWidth: 1.5, pointRadius: 0, backgroundColor: 'transparent' },
+    type:'line',
+    data:{ labels:QS, datasets:[
+      { label:'Effective Supply (ExaFLOPS)', data:[], borderColor:'rgba(52,211,153,1)', backgroundColor:'rgba(52,211,153,.08)', fill:true, tension:.3, borderWidth:2.5, pointRadius:2 },
+      { label:'Total Demand (ExaFLOPS)', data:[], borderColor:'rgba(248,113,113,1)', backgroundColor:'rgba(248,113,113,.08)', fill:true, tension:.3, borderWidth:2.5, pointRadius:2 },
+      { label:'Training Demand', data:[], borderColor:'rgba(251,191,36,.6)', borderDash:[5,3], tension:.3, borderWidth:1.5, pointRadius:0, backgroundColor:'transparent' },
+      { label:'Inference Demand', data:[], borderColor:'rgba(167,139,250,.6)', borderDash:[5,3], tension:.3, borderWidth:1.5, pointRadius:0, backgroundColor:'transparent' },
     ]},
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      interaction: { mode: 'index', intersect: false },
-      plugins: {
-        legend: { labels: { color: '#8e92a4', font } },
-        tooltip: { backgroundColor: '#1a1d27', borderColor: '#2e3348', borderWidth: 1, titleFont: font, bodyFont: font,
-          callbacks: { label: c => `${c.dataset.label}: ${fmt(c.parsed.y)} ExaFLOPS` } },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      interaction:{ mode:'index', intersect:false },
+      plugins:{
+        legend:{ labels:{ color:'#8e92a4', font } },
+        tooltip:{ backgroundColor:'#1a1d27', borderColor:'#2e3348', borderWidth:1, titleFont:font, bodyFont:font,
+          callbacks:{ label: c => `${c.dataset.label}: ${fmt(c.parsed.y)} ExaFLOPS` } },
       },
-      scales: {
-        x: { ticks: { color: '#8e92a4', font: { size: 10 } }, grid: { color: gridColor } },
-        y: { ticks: { color: '#8e92a4', font: { size: 10 }, callback: v => fmt(v) }, grid: { color: gridColor },
-          title: { display: true, text: 'Sustained ExaFLOPS', color: '#8e92a4', font } },
+      scales:{
+        x:{ ticks:{ color:'#8e92a4', font:{size:10} }, grid:{ color:gc } },
+        y:{ beginAtZero:true, ticks:{ color:'#8e92a4', font:{size:10}, callback:v=>fmt(v) }, grid:{ color:gc },
+          title:{ display:true, text:'Sustained ExaFLOPS', color:'#8e92a4', font } },
       },
     },
   });
 
   secChart = new Chart($('secChart'), {
-    type: 'line',
-    data: { labels: QS, datasets: [] },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      interaction: { mode: 'index', intersect: false },
-      plugins: { legend: { labels: { color: '#8e92a4', font } },
-        tooltip: { backgroundColor: '#1a1d27', borderColor: '#2e3348', borderWidth: 1, titleFont: font, bodyFont: font } },
-      scales: {
-        x: { ticks: { color: '#8e92a4', font: { size: 10 } }, grid: { color: gridColor } },
-        y: { ticks: { color: '#8e92a4', font: { size: 10 } }, grid: { color: gridColor },
-          title: { display: true, text: '', color: '#8e92a4', font } },
+    type:'line', data:{ labels:QS, datasets:[] },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      interaction:{ mode:'index', intersect:false },
+      plugins:{ legend:{ labels:{ color:'#8e92a4', font } },
+        tooltip:{ backgroundColor:'#1a1d27', borderColor:'#2e3348', borderWidth:1, titleFont:font, bodyFont:font } },
+      scales:{
+        x:{ ticks:{ color:'#8e92a4', font:{size:10} }, grid:{ color:gc } },
+        y:{ beginAtZero:true, ticks:{ color:'#8e92a4', font:{size:10} }, grid:{ color:gc },
+          title:{ display:true, text:'', color:'#8e92a4', font } },
       },
     },
   });
@@ -409,7 +539,6 @@ function update() {
   const p = readUI();
   const d = compute(p);
 
-  // Main chart
   mainChart.data.datasets[0].data = d.supply;
   mainChart.data.datasets[1].data = d.demand;
   mainChart.data.datasets[2].data = d.demandTrain;
@@ -418,61 +547,88 @@ function update() {
 
   // Secondary
   secChart.data.datasets = [];
+  secChart.options.scales.y.stacked = false;
   if (activeTab === 'breakdown') {
     secChart.options.scales.y.title.text = 'ExaFLOPS';
     secChart.options.scales.y.stacked = true;
+    secChart.options.scales.x.stacked = true;
     secChart.data.datasets = [
-      { label: 'Training Demand', data: d.demandTrain, backgroundColor: 'rgba(251,191,36,.5)', borderColor: 'rgba(251,191,36,.8)', fill: 'origin', tension: .3, borderWidth: 1, pointRadius: 0 },
-      { label: 'Inference Demand', data: d.demandInf, backgroundColor: 'rgba(167,139,250,.5)', borderColor: 'rgba(167,139,250,.8)', fill: '-1', tension: .3, borderWidth: 1, pointRadius: 0 },
-      { label: 'Supply', data: d.supply, backgroundColor: 'transparent', borderColor: 'rgba(52,211,153,1)', fill: false, tension: .3, borderWidth: 2.5, pointRadius: 2, borderDash: [] },
+      { label:'Training Demand', data:d.demandTrain, backgroundColor:'rgba(251,191,36,.5)', borderColor:'rgba(251,191,36,.8)', fill:'origin', tension:.3, borderWidth:1, pointRadius:0 },
+      { label:'Inference Demand', data:d.demandInf, backgroundColor:'rgba(167,139,250,.5)', borderColor:'rgba(167,139,250,.8)', fill:'-1', tension:.3, borderWidth:1, pointRadius:0 },
+      { label:'Supply', data:d.supply, backgroundColor:'transparent', borderColor:'rgba(52,211,153,1)', fill:false, tension:.3, borderWidth:2.5, pointRadius:2 },
     ];
   } else if (activeTab === 'revenue') {
-    secChart.options.scales.y.title.text = '$B / year';
-    secChart.options.scales.y.stacked = false;
+    secChart.options.scales.y.title.text = 'Annualized $B';
+    secChart.options.scales.x.stacked = false;
     secChart.data.datasets = [
-      { label: 'Global IT Spend ($B)', data: d.itSpend, borderColor: 'rgba(96,165,250,.5)', backgroundColor: 'transparent', tension: .3, borderWidth: 1.5, pointRadius: 0, borderDash: [4,4] },
-      { label: 'AI Spend ($B)', data: d.aiRevenue, borderColor: 'rgba(251,191,36,1)', backgroundColor: 'rgba(251,191,36,.08)', fill: true, tension: .3, borderWidth: 2.5, pointRadius: 2 },
+      { label:'Global IT Spend ($B/yr)', data:d.itSpend, borderColor:'rgba(96,165,250,.4)', backgroundColor:'transparent', tension:.3, borderWidth:1.5, pointRadius:0, borderDash:[4,4] },
+      { label:'AI Spend ($B/yr)', data:d.aiRevenue, borderColor:'rgba(251,191,36,1)', backgroundColor:'rgba(251,191,36,.08)', fill:true, tension:.3, borderWidth:2.5, pointRadius:2 },
     ];
   } else if (activeTab === 'gap') {
     secChart.options.scales.y.title.text = 'ExaFLOPS (+ surplus, - deficit)';
-    secChart.options.scales.y.stacked = false;
-    const gapColors = d.gap.map(v => v >= 0 ? 'rgba(52,211,153,.6)' : 'rgba(248,113,113,.6)');
+    secChart.options.scales.x.stacked = false;
     secChart.data.datasets = [{
-      label: 'Supply - Demand', data: d.gap, borderColor: gapColors,
+      label:'Supply - Demand', data:d.gap,
       backgroundColor: d.gap.map(v => v >= 0 ? 'rgba(52,211,153,.15)' : 'rgba(248,113,113,.15)'),
-      fill: true, tension: .3, borderWidth: 2, pointRadius: 3,
-      pointBackgroundColor: gapColors, segment: {
-        borderColor: ctx => (ctx.p0.parsed.y >= 0 && ctx.p1.parsed.y >= 0) ? 'rgba(52,211,153,.8)' : 'rgba(248,113,113,.8)',
-      },
+      borderColor: d.gap.map(v => v >= 0 ? 'rgba(52,211,153,.8)' : 'rgba(248,113,113,.8)'),
+      fill:true, tension:.3, borderWidth:2, pointRadius:3,
+      pointBackgroundColor: d.gap.map(v => v >= 0 ? 'rgba(52,211,153,.8)' : 'rgba(248,113,113,.8)'),
+      segment:{ borderColor: ctx => (ctx.p0.parsed.y >= 0 && ctx.p1.parsed.y >= 0) ? 'rgba(52,211,153,.8)' : 'rgba(248,113,113,.8)' },
     }];
   }
   secChart.update('none');
 
-  // KPIs (Q4-28 = index 19, Q4-25 = index 7)
+  // KPIs (annualized $B)
   const s28 = d.supply[19], dem28 = d.demand[19], gap28 = d.gap[19];
-  const rev28 = d.aiRevenue[19], pct28 = d.aiPct[19];
+  const aiB28 = d.aiRevenue[19], itB28 = d.itSpend[19], pct28 = d.aiPct[19];
   $('kpis').innerHTML = `
     <div class="kpi"><div class="lb">Supply Q4-28</div><div class="vl" style="color:var(--green)">${fmt(s28)}</div><div class="sb">ExaFLOPS</div></div>
     <div class="kpi"><div class="lb">Demand Q4-28</div><div class="vl" style="color:var(--red)">${fmt(dem28)}</div><div class="sb">ExaFLOPS</div></div>
     <div class="kpi"><div class="lb">Gap Q4-28</div><div class="vl" style="color:${gap28>=0?'var(--green)':'var(--red)'}">${gap28>=0?'+':''}${fmt(gap28)}</div><div class="sb">${gap28>=0?'Surplus':'DEFICIT'}</div></div>
-    <div class="kpi"><div class="lb">AI Spend Q4-28</div><div class="vl" style="color:var(--orange)">$${fmt(rev28)}B</div><div class="sb">${pct28.toFixed(0)}% of IT</div></div>
-    <div class="kpi"><div class="lb">IT Spend Q4-28</div><div class="vl" style="color:var(--blue)">$${fmt(d.itSpend[19])}B</div><div class="sb">${(+readUI().itCagr)}% CAGR</div></div>
+    <div class="kpi"><div class="lb">AI Spend (ann.)</div><div class="vl" style="color:var(--orange)">$${fmt(aiB28)}B</div><div class="sb">${pct28.toFixed(0)}% of IT</div></div>
+    <div class="kpi"><div class="lb">IT Spend (ann.)</div><div class="vl" style="color:var(--blue)">$${fmtT(itB28)}T</div><div class="sb">${(+readUI().itCagr)}% CAGR</div></div>
   `;
 
-  // Table
+  // Crossover detection
+  let crossQ = null;
+  for (let i = 1; i < N; i++) {
+    if (d.gap[i-1] >= 0 && d.gap[i] < 0) { crossQ = QS[i]; break; }
+  }
+  const cm = $('crossover-msg');
+  if (crossQ) {
+    cm.style.background = 'rgba(248,113,113,.1)';
+    cm.style.border = '1px solid rgba(248,113,113,.3)';
+    cm.style.color = 'var(--red)';
+    cm.textContent = `Demand exceeds supply in ${crossQ}. After this point, inference capacity is constrained.`;
+  } else if (d.gap[19] >= 0) {
+    cm.style.background = 'rgba(52,211,153,.1)';
+    cm.style.border = '1px solid rgba(52,211,153,.3)';
+    cm.style.color = 'var(--green)';
+    cm.textContent = `Supply remains adequate through Q4-28 with a surplus of ${fmt(d.gap[19])} ExaFLOPS.`;
+  } else {
+    cm.style.background = 'rgba(248,113,113,.1)';
+    cm.style.border = '1px solid rgba(248,113,113,.3)';
+    cm.style.color = 'var(--red)';
+    cm.textContent = `Demand exceeds supply throughout the forecast period. Deficit reaches ${fmt(Math.abs(d.gap[19]))} ExaFLOPS by Q4-28.`;
+  }
+
+  // Table (annualized $B)
   const yrs = [{l:'2024',i:3},{l:'2025',i:7},{l:'2026',i:11},{l:'2027',i:15},{l:'2028',i:19}];
   let h = `<thead><tr><th>Year</th><th>IT Spend</th><th>AI %</th><th>AI Spend</th><th>Supply (EF)</th><th>Demand (EF)</th><th>Gap</th></tr></thead><tbody>`;
   for (const y of yrs) {
     const g = d.gap[y.i]; const cls = g >= 0 ? 'surplus' : 'deficit';
-    h += `<tr><td>${y.l}</td><td>$${fmt(d.itSpend[y.i])}B</td><td>${d.aiPct[y.i].toFixed(1)}%</td>
+    h += `<tr><td>${y.l}</td><td>$${fmtT(d.itSpend[y.i])}T</td><td>${d.aiPct[y.i].toFixed(1)}%</td>
       <td>$${fmt(d.aiRevenue[y.i])}B</td><td>${fmt(d.supply[y.i])}</td><td>${fmt(d.demand[y.i])}</td>
       <td class="${cls}">${g>=0?'+':''}${fmt(g)}</td></tr>`;
   }
   $('tbl').innerHTML = h + '</tbody>';
 
-  // Hash
+  // URL hash
   const params = new URLSearchParams();
   for (const [el, k] of FIELDS) params.set(k, $(el).value);
+  // Encode project toggles (only off projects, since most are on)
+  const offProjects = PROJECTS.map((p,i) => p.on ? null : i).filter(x => x !== null);
+  if (offProjects.length > 0) params.set('off', offProjects.join(','));
   history.replaceState(null, '', '#' + params);
 }
 
@@ -486,14 +642,32 @@ function fmt(n) {
   return n.toFixed(2);
 }
 
+function fmtT(bVal) {
+  // Format $B value as $T with one decimal
+  return (bVal / 1000).toFixed(1);
+}
+
 // ================================================================
 // INTERACTIONS
 // ================================================================
 function preset(name) {
   document.querySelectorAll('.scenario-bar .btn').forEach(b => b.classList.remove('active'));
   $('btn-' + name).classList.add('active');
-  if (name !== 'custom' && SC[name]) { writeUI(SC[name]); }
+  if (name !== 'custom' && SC[name]) {
+    writeUI(SC[name]);
+    // Reset all projects to on (except nuclear SMRs which are off by default)
+    PROJECTS.forEach((p, i) => {
+      p.on = !['Kairos SMR (Google PPA)', 'NuScale SMR', 'Oklo Aurora SMR', 'Qatar AI DC Initiative'].includes(p.name);
+    });
+    renderProjects($('proj-search').value);
+    syncPowerSlider();
+  }
   update();
+}
+
+function markCustom() {
+  document.querySelectorAll('.scenario-bar .btn').forEach(b => b.classList.remove('active'));
+  $('btn-custom').classList.add('active');
 }
 
 function tab(el) {
@@ -515,14 +689,21 @@ function copyLink() {
 // ================================================================
 window.addEventListener('DOMContentLoaded', () => {
   initCharts();
+  renderProjects();
 
-  // Load from hash or default
+  // Load from hash
   if (location.hash.length > 1) {
     try {
       const params = new URLSearchParams(location.hash.slice(1));
       const s = { ...SC.base };
       for (const [el, k] of FIELDS) { if (params.has(k)) s[k] = +params.get(k); }
       writeUI(s);
+      // Restore project toggles
+      if (params.has('off')) {
+        const offs = params.get('off').split(',').map(Number);
+        offs.forEach(i => { if (PROJECTS[i]) PROJECTS[i].on = false; });
+        renderProjects();
+      }
       document.querySelectorAll('.scenario-bar .btn').forEach(b => b.classList.remove('active'));
       $('btn-custom').classList.add('active');
     } catch(e) { writeUI(SC.base); }
@@ -530,14 +711,12 @@ window.addEventListener('DOMContentLoaded', () => {
     writeUI(SC.base);
   }
 
+  // Events
   document.querySelectorAll('input[type=range]').forEach(el => {
-    el.addEventListener('input', () => {
-      labels();
-      document.querySelectorAll('.scenario-bar .btn').forEach(b => b.classList.remove('active'));
-      $('btn-custom').classList.add('active');
-      update();
-    });
+    el.addEventListener('input', () => { labels(); markCustom(); update(); });
   });
+
+  $('proj-search').addEventListener('input', e => renderProjects(e.target.value));
 
   update();
 });
