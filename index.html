@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Compute Supply vs Demand Model (2024-2028)</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.1.0"></script>
+<style>
+:root {
+  --bg: #0f1117;
+  --bg2: #1a1d27;
+  --bg3: #242836;
+  --border: #2e3348;
+  --text: #e0e0e8;
+  --text2: #8e92a4;
+  --green: #34d399;
+  --green2: #059669;
+  --red: #f87171;
+  --red2: #dc2626;
+  --orange: #fb923c;
+  --blue: #60a5fa;
+  --purple: #a78bfa;
+  --yellow: #fbbf24;
+  --cyan: #22d3ee;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: var(--bg); color: var(--text); font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace; font-size: 13px; line-height: 1.5; }
+h1 { font-size: 18px; font-weight: 600; }
+h2 { font-size: 14px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+h3 { font-size: 12px; font-weight: 500; color: var(--text2); margin-bottom: 4px; }
+
+.header { display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; border-bottom: 1px solid var(--border); background: var(--bg2); }
+.header-right { display: flex; gap: 8px; }
+.btn { padding: 6px 14px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg3); color: var(--text); cursor: pointer; font-family: inherit; font-size: 12px; transition: all 0.15s; }
+.btn:hover { border-color: var(--text2); }
+.btn.active { background: var(--green2); border-color: var(--green); color: white; }
+.btn-share { background: var(--blue); border-color: var(--blue); color: #000; font-weight: 600; }
+.btn-share:hover { opacity: 0.85; }
+
+.scenario-bar { display: flex; gap: 8px; padding: 12px 24px; border-bottom: 1px solid var(--border); background: var(--bg); align-items: center; }
+.scenario-bar label { color: var(--text2); font-size: 12px; margin-right: 4px; }
+
+.layout { display: grid; grid-template-columns: 320px 1fr; min-height: calc(100vh - 100px); }
+.controls { border-right: 1px solid var(--border); overflow-y: auto; max-height: calc(100vh - 100px); }
+.charts-area { padding: 20px 24px; overflow-y: auto; max-height: calc(100vh - 100px); }
+
+.panel { padding: 16px 20px; border-bottom: 1px solid var(--border); }
+.slider-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.slider-row label { flex: 1; font-size: 12px; color: var(--text); }
+.slider-row .val { min-width: 55px; text-align: right; font-size: 12px; color: var(--green); font-weight: 600; }
+input[type="range"] { width: 100px; height: 4px; -webkit-appearance: none; background: var(--bg3); border-radius: 2px; outline: none; }
+input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%; background: var(--green); cursor: pointer; }
+
+.check-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 12px; }
+.check-row input[type="checkbox"] { accent-color: var(--green); }
+
+.chart-container { position: relative; width: 100%; margin-bottom: 24px; }
+.main-chart { height: 400px; }
+.secondary-chart { height: 280px; }
+
+.tab-bar { display: flex; gap: 4px; margin-bottom: 12px; }
+.tab { padding: 4px 12px; border-radius: 4px; cursor: pointer; font-size: 11px; color: var(--text2); background: var(--bg3); border: 1px solid var(--border); }
+.tab.active { color: var(--green); border-color: var(--green2); background: rgba(52,211,153,0.1); }
+
+.metrics-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 16px; }
+.metrics-table th { text-align: left; padding: 8px 10px; border-bottom: 2px solid var(--border); color: var(--text2); font-weight: 500; }
+.metrics-table td { padding: 6px 10px; border-bottom: 1px solid var(--border); }
+.metrics-table .surplus { color: var(--green); }
+.metrics-table .deficit { color: var(--red); }
+
+.kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+.kpi { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; }
+.kpi .label { font-size: 11px; color: var(--text2); margin-bottom: 4px; }
+.kpi .value { font-size: 22px; font-weight: 700; }
+.kpi .sub { font-size: 11px; color: var(--text2); margin-top: 2px; }
+
+.toast { position: fixed; bottom: 24px; right: 24px; background: var(--green2); color: white; padding: 10px 20px; border-radius: 8px; font-size: 13px; opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 100; }
+.toast.show { opacity: 1; }
+.footnotes { padding: 16px 24px; border-top: 1px solid var(--border); font-size: 11px; color: var(--text2); line-height: 1.7; max-width: 900px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>AI Compute Supply vs Demand Model &mdash; 2024-2028</h1>
+  <div class="header-right">
+    <button class="btn btn-share" onclick="copyShareLink()">Copy Link</button>
+  </div>
+</div>
+
+<div class="scenario-bar">
+  <label>Scenario:</label>
+  <button class="btn active" id="btn-base" onclick="applyScenario('base')">Base Case</button>
+  <button class="btn" id="btn-bull" onclick="applyScenario('bull')">Bull</button>
+  <button class="btn" id="btn-bear" onclick="applyScenario('bear')">Bear</button>
+  <button class="btn" id="btn-crunch" onclick="applyScenario('crunch')">Inference Crunch</button>
+  <button class="btn" id="btn-custom" onclick="applyScenario('custom')">Custom</button>
+  <span style="margin-left: auto; font-size: 11px; color: var(--text2);">All values are adjustable. Charts update in real-time.</span>
+</div>
+
+<div class="layout">
+  <!-- CONTROLS -->
+  <div class="controls">
+    <!-- SUPPLY -->
+    <div class="panel">
+      <h2>Supply</h2>
+
+      <h3>Datacenter Power (AI-capable GW by 2028)</h3>
+      <div class="slider-row">
+        <label>Power online</label>
+        <input type="range" id="s-power" min="15" max="60" step="1" value="37">
+        <span class="val" id="v-power">37 GW</span>
+      </div>
+
+      <h3 style="margin-top:12px">GPU Utilization</h3>
+      <div class="slider-row">
+        <label>Effective utilization</label>
+        <input type="range" id="s-util" min="10" max="60" step="1" value="30">
+        <span class="val" id="v-util">30%</span>
+      </div>
+
+      <h3 style="margin-top:12px">Chip Supply Multiplier</h3>
+      <div class="slider-row">
+        <label>vs baseline forecast</label>
+        <input type="range" id="s-chip-mult" min="50" max="150" step="5" value="100">
+        <span class="val" id="v-chip-mult">1.00x</span>
+      </div>
+
+      <h3 style="margin-top:12px">Supply Constraints</h3>
+      <div class="check-row"><input type="checkbox" id="c-cowos" checked><label for="c-cowos">CoWoS packaging (85%)</label></div>
+      <div class="check-row"><input type="checkbox" id="c-hbm" checked><label for="c-hbm">HBM supply (90%)</label></div>
+      <div class="check-row"><input type="checkbox" id="c-network"><label for="c-network">Network fabric (95%)</label></div>
+      <div class="check-row"><input type="checkbox" id="c-cooling"><label for="c-cooling">Cooling limits (92%)</label></div>
+
+      <h3 style="margin-top:12px">Vendor Mix</h3>
+      <div class="check-row"><input type="checkbox" id="c-nvidia" checked><label for="c-nvidia">NVIDIA</label></div>
+      <div class="check-row"><input type="checkbox" id="c-amd" checked><label for="c-amd">AMD</label></div>
+      <div class="check-row"><input type="checkbox" id="c-custom" checked><label for="c-custom">Custom ASICs (TPU, Trainium, Maia)</label></div>
+    </div>
+
+    <!-- DEMAND -->
+    <div class="panel">
+      <h2>Demand &mdash; Token Growth (quarterly %)</h2>
+
+      <div class="slider-row">
+        <label>Consumer Chat</label>
+        <input type="range" id="d-chat" min="5" max="60" step="1" value="25">
+        <span class="val" id="v-chat">25%</span>
+      </div>
+      <div class="slider-row">
+        <label>Copilots / Embedded</label>
+        <input type="range" id="d-copilot" min="5" max="60" step="1" value="35">
+        <span class="val" id="v-copilot">35%</span>
+      </div>
+      <div class="slider-row">
+        <label>Coding Agents</label>
+        <input type="range" id="d-code" min="5" max="80" step="1" value="55">
+        <span class="val" id="v-code">55%</span>
+      </div>
+      <div class="slider-row">
+        <label>Enterprise Agents</label>
+        <input type="range" id="d-enterprise" min="5" max="80" step="1" value="50">
+        <span class="val" id="v-enterprise">50%</span>
+      </div>
+      <div class="slider-row">
+        <label>Multimodal</label>
+        <input type="range" id="d-multimodal" min="5" max="60" step="1" value="40">
+        <span class="val" id="v-multimodal">40%</span>
+      </div>
+      <div class="slider-row">
+        <label>Search / RAG</label>
+        <input type="range" id="d-search" min="5" max="60" step="1" value="30">
+        <span class="val" id="v-search">30%</span>
+      </div>
+
+      <h3 style="margin-top: 12px">Reasoning Overhead (hidden CoT multiplier)</h3>
+      <div class="slider-row">
+        <label>Tokens generated per visible token</label>
+        <input type="range" id="d-reasoning" min="1" max="50" step="1" value="10">
+        <span class="val" id="v-reasoning">10x</span>
+      </div>
+    </div>
+
+    <!-- EFFICIENCY -->
+    <div class="panel">
+      <h2>Efficiency & Split</h2>
+
+      <h3>Training / Inference Split (2024 &rarr; 2028)</h3>
+      <div class="slider-row">
+        <label>Training % (2024)</label>
+        <input type="range" id="e-train24" min="10" max="70" step="5" value="40">
+        <span class="val" id="v-train24">40%</span>
+      </div>
+      <div class="slider-row">
+        <label>Training % (2028)</label>
+        <input type="range" id="e-train28" min="5" max="50" step="5" value="20">
+        <span class="val" id="v-train28">20%</span>
+      </div>
+
+      <h3 style="margin-top: 12px">Inference Efficiency Gain (by 2028)</h3>
+      <div class="slider-row">
+        <label>Multiplier vs 2024</label>
+        <input type="range" id="e-inf-eff" min="1" max="30" step="1" value="8">
+        <span class="val" id="v-inf-eff">8x</span>
+      </div>
+
+      <h3 style="margin-top: 12px">Training Efficiency Gain (by 2028)</h3>
+      <div class="slider-row">
+        <label>Multiplier vs 2024</label>
+        <input type="range" id="e-train-eff" min="1" max="15" step="1" value="3">
+        <span class="val" id="v-train-eff">3x</span>
+      </div>
+
+      <h3 style="margin-top: 12px">Frontier Model Share of Demand</h3>
+      <div class="slider-row">
+        <label>% on frontier-tier models</label>
+        <input type="range" id="e-frontier" min="0" max="50" step="1" value="15">
+        <span class="val" id="v-frontier">15%</span>
+      </div>
+      <div class="slider-row">
+        <label>Frontier cost multiplier</label>
+        <input type="range" id="e-frontier-cost" min="5" max="200" step="5" value="50">
+        <span class="val" id="v-frontier-cost">50x</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- CHARTS -->
+  <div class="charts-area">
+    <div class="kpi-row" id="kpi-row"></div>
+
+    <div class="chart-container main-chart">
+      <canvas id="mainChart"></canvas>
+    </div>
+
+    <div class="tab-bar">
+      <div class="tab active" data-tab="demand" onclick="switchTab(this)">Demand Breakdown</div>
+      <div class="tab" data-tab="chip" onclick="switchTab(this)">Chip Mix</div>
+      <div class="tab" data-tab="power" onclick="switchTab(this)">Power Capacity</div>
+      <div class="tab" data-tab="tokens" onclick="switchTab(this)">Tokens / Day</div>
+    </div>
+
+    <div class="chart-container secondary-chart">
+      <canvas id="secondaryChart"></canvas>
+    </div>
+
+    <table class="metrics-table" id="metricsTable"></table>
+
+    <div class="footnotes">
+      <strong>Methodology:</strong> Supply = cumulative installed GPU base &times; per-chip FP8 ExaFLOPS &times; bottleneck factors &times; utilization, capped by datacenter power.
+      Demand = sum of tier token volumes (compounding quarterly growth) &times; FLOP/token conversion, adjusted for reasoning overhead, frontier model concentration, and training/inference split.
+      Efficiency gains reduce effective demand over time. Gap = Supply &minus; Net Demand.
+      <br><br>
+      <strong>Sources:</strong> Chip shipment estimates from JP Morgan, Morgan Stanley, SemiAnalysis. Power capacity from JLL, CBRE, IEA. Capex from hyperscaler earnings calls (MSFT, GOOG, AMZN, META, ORCL).
+      Efficiency trends from Epoch AI, AI-2027 compute forecast. Token demand estimates are author projections based on usage patterns and announced product roadmaps.
+      <br><br>
+      <strong>Etach Capital Research</strong> &mdash; March 2026
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast">Link copied to clipboard</div>
+
+<script>
+// ============================================================
+// DATA MODEL
+// ============================================================
+const Q_LABELS = [
+  'Q1-24','Q2-24','Q3-24','Q4-24',
+  'Q1-25','Q2-25','Q3-25','Q4-25',
+  'Q1-26','Q2-26','Q3-26','Q4-26',
+  'Q1-27','Q2-27','Q3-27','Q4-27',
+  'Q1-28','Q2-28','Q3-28','Q4-28'
+];
+const N = Q_LABELS.length;
+
+// Baseline cumulative ExaFLOPS installed (raw FP8) per quarter
+// Derived from research: 17 EF end-2024, 55 end-2025, 150 end-2026, 310 end-2027, 580 end-2028
+const SUPPLY_BASELINE_CUMULATIVE = [
+  5, 8, 12, 17,       // 2024
+  22, 30, 40, 55,      // 2025
+  70, 95, 120, 150,    // 2026
+  180, 220, 265, 310,  // 2027
+  370, 430, 500, 580   // 2028
+];
+
+// Breakdown: NVIDIA share, AMD share, Custom ASIC share (of cumulative)
+const NVIDIA_SHARE =  [0.85, 0.85, 0.85, 0.84, 0.83, 0.82, 0.81, 0.80, 0.79, 0.78, 0.77, 0.76, 0.75, 0.74, 0.73, 0.72, 0.71, 0.70, 0.70, 0.70];
+const AMD_SHARE =     [0.05, 0.05, 0.06, 0.06, 0.07, 0.07, 0.08, 0.08, 0.09, 0.09, 0.10, 0.10, 0.10, 0.11, 0.11, 0.12, 0.12, 0.13, 0.13, 0.13];
+const CUSTOM_SHARE =  [0.10, 0.10, 0.09, 0.10, 0.10, 0.11, 0.11, 0.12, 0.12, 0.13, 0.13, 0.14, 0.15, 0.15, 0.16, 0.16, 0.17, 0.17, 0.17, 0.17];
+
+// Power baseline (GW AI-capable) - linear interp from research data
+const POWER_BASELINE = [
+  4.0, 4.5, 5.0, 6.0,    // 2024
+  7.0, 8.5, 10, 12,       // 2025
+  14, 17, 20, 23,          // 2026
+  25, 28, 30, 33,          // 2027
+  34, 35, 36, 37           // 2028
+];
+
+// Max ExaFLOPS per GW (rough: 1 GW of AI DC ~ 20 ExaFLOPS at 2024 density, improving)
+const EXAFLOPS_PER_GW = [
+  3.5, 3.8, 4.0, 4.5,
+  5.0, 5.5, 6.0, 7.0,
+  8.0, 9.0, 10, 11,
+  12, 13, 14, 15,
+  16, 17, 18, 19
+];
+
+// Demand baseline: tokens per day (trillions) by tier, Q1-2024
+const DEMAND_TIERS = {
+  chat:       { label: 'Consumer Chat',      base: 0.9,  color: 'rgba(96,165,250,0.7)'  },
+  copilot:    { label: 'Copilots / Embedded', base: 0.75, color: 'rgba(167,139,250,0.7)' },
+  code:       { label: 'Coding Agents',      base: 0.05, color: 'rgba(52,211,153,0.7)'  },
+  enterprise: { label: 'Enterprise Agents',  base: 0.02, color: 'rgba(251,191,36,0.7)'  },
+  multimodal: { label: 'Multimodal',         base: 0.1,  color: 'rgba(248,113,113,0.7)' },
+  search:     { label: 'Search / RAG',       base: 0.5,  color: 'rgba(34,211,238,0.7)'  },
+};
+
+// Token to ExaFLOPS conversion: 1T tokens/day sustained ~ 0.5 ExaFLOPS
+// (assumes ~400B avg model, ~800 GFLOP/token, 86400s/day)
+const TOKENS_TO_EF = 0.5;
+
+// ============================================================
+// SCENARIOS
+// ============================================================
+const SCENARIOS = {
+  base: {
+    power: 37, util: 30, chipMult: 100,
+    cowos: true, hbm: true, network: false, cooling: false,
+    nvidia: true, amd: true, custom: true,
+    chat: 25, copilot: 35, code: 55, enterprise: 50, multimodal: 40, search: 30,
+    reasoning: 10,
+    train24: 40, train28: 20, infEff: 8, trainEff: 3,
+    frontier: 15, frontierCost: 50,
+  },
+  bull: {
+    power: 50, util: 40, chipMult: 120,
+    cowos: false, hbm: false, network: false, cooling: false,
+    nvidia: true, amd: true, custom: true,
+    chat: 20, copilot: 25, code: 40, enterprise: 35, multimodal: 30, search: 25,
+    reasoning: 5,
+    train24: 40, train28: 25, infEff: 15, trainEff: 5,
+    frontier: 10, frontierCost: 30,
+  },
+  bear: {
+    power: 25, util: 22, chipMult: 75,
+    cowos: true, hbm: true, network: true, cooling: true,
+    nvidia: true, amd: true, custom: true,
+    chat: 30, copilot: 40, code: 60, enterprise: 55, multimodal: 45, search: 35,
+    reasoning: 15,
+    train24: 45, train28: 25, infEff: 4, trainEff: 2,
+    frontier: 20, frontierCost: 80,
+  },
+  crunch: {
+    power: 30, util: 25, chipMult: 85,
+    cowos: true, hbm: true, network: false, cooling: false,
+    nvidia: true, amd: true, custom: true,
+    chat: 30, copilot: 40, code: 65, enterprise: 60, multimodal: 50, search: 35,
+    reasoning: 20,
+    train24: 35, train28: 15, infEff: 5, trainEff: 2,
+    frontier: 25, frontierCost: 100,
+  },
+  custom: null, // populated from current UI state
+};
+
+// ============================================================
+// READ / WRITE UI STATE
+// ============================================================
+function readUI() {
+  return {
+    power: +$('s-power').value,
+    util: +$('s-util').value,
+    chipMult: +$('s-chip-mult').value,
+    cowos: $('c-cowos').checked,
+    hbm: $('c-hbm').checked,
+    network: $('c-network').checked,
+    cooling: $('c-cooling').checked,
+    nvidia: $('c-nvidia').checked,
+    amd: $('c-amd').checked,
+    custom: $('c-custom').checked,
+    chat: +$('d-chat').value,
+    copilot: +$('d-copilot').value,
+    code: +$('d-code').value,
+    enterprise: +$('d-enterprise').value,
+    multimodal: +$('d-multimodal').value,
+    search: +$('d-search').value,
+    reasoning: +$('d-reasoning').value,
+    train24: +$('e-train24').value,
+    train28: +$('e-train28').value,
+    infEff: +$('e-inf-eff').value,
+    trainEff: +$('e-train-eff').value,
+    frontier: +$('e-frontier').value,
+    frontierCost: +$('e-frontier-cost').value,
+  };
+}
+
+function writeUI(s) {
+  $('s-power').value = s.power;
+  $('s-util').value = s.util;
+  $('s-chip-mult').value = s.chipMult;
+  $('c-cowos').checked = s.cowos;
+  $('c-hbm').checked = s.hbm;
+  $('c-network').checked = s.network;
+  $('c-cooling').checked = s.cooling;
+  $('c-nvidia').checked = s.nvidia;
+  $('c-amd').checked = s.amd;
+  $('c-custom').checked = s.custom;
+  $('d-chat').value = s.chat;
+  $('d-copilot').value = s.copilot;
+  $('d-code').value = s.code;
+  $('d-enterprise').value = s.enterprise;
+  $('d-multimodal').value = s.multimodal;
+  $('d-search').value = s.search;
+  $('d-reasoning').value = s.reasoning;
+  $('e-train24').value = s.train24;
+  $('e-train28').value = s.train28;
+  $('e-inf-eff').value = s.infEff;
+  $('e-train-eff').value = s.trainEff;
+  $('e-frontier').value = s.frontier;
+  $('e-frontier-cost').value = s.frontierCost;
+  updateLabels();
+}
+
+function updateLabels() {
+  $('v-power').textContent = $('s-power').value + ' GW';
+  $('v-util').textContent = $('s-util').value + '%';
+  $('v-chip-mult').textContent = (+$('s-chip-mult').value / 100).toFixed(2) + 'x';
+  $('v-chat').textContent = $('d-chat').value + '%';
+  $('v-copilot').textContent = $('d-copilot').value + '%';
+  $('v-code').textContent = $('d-code').value + '%';
+  $('v-enterprise').textContent = $('d-enterprise').value + '%';
+  $('v-multimodal').textContent = $('d-multimodal').value + '%';
+  $('v-search').textContent = $('d-search').value + '%';
+  $('v-reasoning').textContent = $('d-reasoning').value + 'x';
+  $('v-train24').textContent = $('e-train24').value + '%';
+  $('v-train28').textContent = $('e-train28').value + '%';
+  $('v-inf-eff').textContent = $('e-inf-eff').value + 'x';
+  $('v-train-eff').textContent = $('e-train-eff').value + 'x';
+  $('v-frontier').textContent = $('e-frontier').value + '%';
+  $('v-frontier-cost').textContent = $('e-frontier-cost').value + 'x';
+}
+
+function $(id) { return document.getElementById(id); }
+
+// ============================================================
+// COMPUTATION ENGINE
+// ============================================================
+function computeSupply(p) {
+  const chipMult = p.chipMult / 100;
+  // Power scaling: user sets 2028 target, interpolate from baseline
+  const powerScale = p.power / 37; // 37 is baseline 2028 value
+
+  let bottleneck = 1;
+  if (p.cowos) bottleneck *= 0.85;
+  if (p.hbm) bottleneck *= 0.90;
+  if (p.network) bottleneck *= 0.95;
+  if (p.cooling) bottleneck *= 0.92;
+
+  const utilRate = p.util / 100;
+
+  const result = { total: [], nvidia: [], amd: [], custom: [], powerCap: [], rawBeforeCap: [] };
+
+  for (let i = 0; i < N; i++) {
+    let raw = SUPPLY_BASELINE_CUMULATIVE[i] * chipMult;
+
+    // Vendor filtering
+    let vendorMult = 0;
+    if (p.nvidia) vendorMult += NVIDIA_SHARE[i];
+    if (p.amd) vendorMult += AMD_SHARE[i];
+    if (p.custom) vendorMult += CUSTOM_SHARE[i];
+    raw *= vendorMult;
+
+    // Apply bottlenecks
+    raw *= bottleneck;
+
+    // Power cap: scale power baseline by user's 2028 target
+    const powerAvail = POWER_BASELINE[i] * powerScale;
+    const maxFromPower = powerAvail * EXAFLOPS_PER_GW[i];
+
+    const rawBeforeCap = raw * utilRate;
+    const effective = Math.min(raw * utilRate, maxFromPower * utilRate);
+
+    result.total.push(effective);
+    result.nvidia.push(SUPPLY_BASELINE_CUMULATIVE[i] * chipMult * NVIDIA_SHARE[i] * bottleneck * utilRate);
+    result.amd.push(SUPPLY_BASELINE_CUMULATIVE[i] * chipMult * AMD_SHARE[i] * bottleneck * utilRate);
+    result.custom.push(SUPPLY_BASELINE_CUMULATIVE[i] * chipMult * CUSTOM_SHARE[i] * bottleneck * utilRate);
+    result.powerCap.push(maxFromPower * utilRate);
+    result.rawBeforeCap.push(rawBeforeCap);
+  }
+  return result;
+}
+
+function computeDemand(p) {
+  const tiers = {
+    chat:       { base: DEMAND_TIERS.chat.base,       growth: p.chat / 100 },
+    copilot:    { base: DEMAND_TIERS.copilot.base,    growth: p.copilot / 100 },
+    code:       { base: DEMAND_TIERS.code.base,       growth: p.code / 100 },
+    enterprise: { base: DEMAND_TIERS.enterprise.base,  growth: p.enterprise / 100 },
+    multimodal: { base: DEMAND_TIERS.multimodal.base,  growth: p.multimodal / 100 },
+    search:     { base: DEMAND_TIERS.search.base,      growth: p.search / 100 },
+  };
+
+  const result = {
+    totalTokens: [], totalEF: [], trainingEF: [], inferenceEF: [],
+    tierTokens: { chat: [], copilot: [], code: [], enterprise: [], multimodal: [], search: [] },
+    rawDemandEF: [],
+  };
+
+  for (let i = 0; i < N; i++) {
+    const t = i / (N - 1); // 0..1 progress through timeline
+
+    // Token demand per tier
+    let totalTokens = 0;
+    for (const [key, tier] of Object.entries(tiers)) {
+      // S-curve: slow the growth rate as we approach saturation
+      // Effective growth decays linearly from full to 30% of initial by end
+      const decayedGrowth = tier.growth * (1 - 0.5 * t);
+      const tokens = tier.base * Math.pow(1 + decayedGrowth, i);
+      result.tierTokens[key].push(tokens);
+      totalTokens += tokens;
+    }
+
+    // Apply reasoning overhead
+    const reasoningMult = 1 + (p.reasoning - 1) * t; // ramps from 1x to full by 2028
+    totalTokens *= reasoningMult;
+
+    result.totalTokens.push(totalTokens);
+
+    // Convert tokens/day to ExaFLOPS demand
+    let rawEF = totalTokens * TOKENS_TO_EF;
+    result.rawDemandEF.push(rawEF);
+
+    // Training/inference split (interpolate)
+    const trainPct = (p.train24 + (p.train28 - p.train24) * t) / 100;
+    const infPct = 1 - trainPct;
+
+    // Efficiency gains (interpolate from 1x to target)
+    const infEff = 1 + (p.infEff - 1) * t;
+    const trainEff = 1 + (p.trainEff - 1) * t;
+
+    // Frontier model concentration: X% of demand costs Y times more
+    const frontierShare = p.frontier / 100;
+    const frontierCost = p.frontierCost;
+    // Effective demand multiplier from frontier concentration
+    const nonFrontier = (1 - frontierShare) * 1;
+    const frontier = frontierShare * frontierCost;
+    const frontierMult = nonFrontier + frontier;
+
+    // Inference demand (after efficiency gains, with frontier concentration)
+    const infDemand = (rawEF * infPct * frontierMult) / infEff;
+    // Training demand (after efficiency gains)
+    const trainDemand = (rawEF * trainPct) / trainEff;
+
+    result.trainingEF.push(trainDemand);
+    result.inferenceEF.push(infDemand);
+    result.totalEF.push(trainDemand + infDemand);
+  }
+  return result;
+}
+
+// ============================================================
+// CHART SETUP
+// ============================================================
+let mainChart, secondaryChart;
+let activeTab = 'demand';
+
+function initCharts() {
+  const mainCtx = $('mainChart').getContext('2d');
+  mainChart = new Chart(mainCtx, {
+    type: 'line',
+    data: {
+      labels: Q_LABELS,
+      datasets: [
+        {
+          label: 'Effective Supply (ExaFLOPS)',
+          data: [],
+          borderColor: 'rgba(52,211,153,1)',
+          backgroundColor: 'rgba(52,211,153,0.08)',
+          fill: true,
+          tension: 0.3,
+          borderWidth: 2.5,
+          pointRadius: 2,
+        },
+        {
+          label: 'Net Demand (ExaFLOPS)',
+          data: [],
+          borderColor: 'rgba(248,113,113,1)',
+          backgroundColor: 'rgba(248,113,113,0.08)',
+          fill: true,
+          tension: 0.3,
+          borderWidth: 2.5,
+          pointRadius: 2,
+        },
+        {
+          label: 'Training Demand',
+          data: [],
+          borderColor: 'rgba(251,191,36,0.7)',
+          backgroundColor: 'transparent',
+          borderDash: [6, 3],
+          tension: 0.3,
+          borderWidth: 1.5,
+          pointRadius: 0,
+        },
+        {
+          label: 'Inference Demand',
+          data: [],
+          borderColor: 'rgba(167,139,250,0.7)',
+          backgroundColor: 'transparent',
+          borderDash: [6, 3],
+          tension: 0.3,
+          borderWidth: 1.5,
+          pointRadius: 0,
+        },
+        {
+          label: 'Power Capacity Ceiling',
+          data: [],
+          borderColor: 'rgba(251,191,36,0.4)',
+          backgroundColor: 'transparent',
+          borderDash: [3, 6],
+          tension: 0.3,
+          borderWidth: 1,
+          pointRadius: 0,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { labels: { color: '#8e92a4', font: { family: "'SF Mono','Fira Code',monospace", size: 11 } } },
+        tooltip: {
+          backgroundColor: '#1a1d27',
+          borderColor: '#2e3348',
+          borderWidth: 1,
+          titleFont: { family: "'SF Mono','Fira Code',monospace", size: 12 },
+          bodyFont: { family: "'SF Mono','Fira Code',monospace", size: 11 },
+          callbacks: {
+            label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y.toFixed(1)} ExaFLOPS`
+          }
+        },
+      },
+      scales: {
+        x: { ticks: { color: '#8e92a4', font: { size: 10 } }, grid: { color: 'rgba(46,51,72,0.5)' } },
+        y: {
+          ticks: { color: '#8e92a4', font: { size: 10 }, callback: v => v.toFixed(0) },
+          grid: { color: 'rgba(46,51,72,0.5)' },
+          title: { display: true, text: 'ExaFLOPS (effective)', color: '#8e92a4', font: { size: 11 } },
+        },
+      },
+    },
+  });
+
+  const secCtx = $('secondaryChart').getContext('2d');
+  secondaryChart = new Chart(secCtx, {
+    type: 'line',
+    data: { labels: Q_LABELS, datasets: [] },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { labels: { color: '#8e92a4', font: { family: "'SF Mono','Fira Code',monospace", size: 11 } } },
+        tooltip: {
+          backgroundColor: '#1a1d27', borderColor: '#2e3348', borderWidth: 1,
+          titleFont: { family: "'SF Mono','Fira Code',monospace", size: 12 },
+          bodyFont: { family: "'SF Mono','Fira Code',monospace", size: 11 },
+        },
+      },
+      scales: {
+        x: { ticks: { color: '#8e92a4', font: { size: 10 } }, grid: { color: 'rgba(46,51,72,0.5)' } },
+        y: { stacked: true, ticks: { color: '#8e92a4', font: { size: 10 } }, grid: { color: 'rgba(46,51,72,0.5)' } },
+      },
+    },
+  });
+}
+
+// ============================================================
+// UPDATE CHARTS
+// ============================================================
+function recalculate() {
+  const p = readUI();
+  const supply = computeSupply(p);
+  const demand = computeDemand(p);
+
+  // Main chart
+  mainChart.data.datasets[0].data = supply.total;
+  mainChart.data.datasets[1].data = demand.totalEF;
+  mainChart.data.datasets[2].data = demand.trainingEF;
+  mainChart.data.datasets[3].data = demand.inferenceEF;
+  mainChart.data.datasets[4].data = supply.powerCap;
+  mainChart.update('none');
+
+  // Secondary chart
+  updateSecondaryChart(supply, demand, p);
+
+  // KPIs
+  updateKPIs(supply, demand);
+
+  // Table
+  updateTable(supply, demand);
+
+  // Update URL hash
+  updateHash(p);
+}
+
+function updateSecondaryChart(supply, demand, p) {
+  secondaryChart.data.datasets = [];
+  let stacked = true;
+  let yTitle = '';
+
+  if (activeTab === 'demand') {
+    yTitle = 'Tokens / Day (Trillions)';
+    const keys = ['chat','copilot','code','enterprise','multimodal','search'];
+    keys.forEach((key, idx) => {
+      secondaryChart.data.datasets.push({
+        label: DEMAND_TIERS[key].label,
+        data: demand.tierTokens[key],
+        backgroundColor: DEMAND_TIERS[key].color,
+        borderColor: DEMAND_TIERS[key].color.replace('0.7','1'),
+        fill: idx === 0 ? 'origin' : '-1',
+        tension: 0.3,
+        borderWidth: 1,
+        pointRadius: 0,
+      });
+    });
+  } else if (activeTab === 'chip') {
+    yTitle = 'ExaFLOPS (effective)';
+    secondaryChart.data.datasets = [
+      { label: 'NVIDIA', data: supply.nvidia, backgroundColor: 'rgba(52,211,153,0.6)', borderColor: 'rgba(52,211,153,1)', fill: 'origin', tension: 0.3, borderWidth: 1, pointRadius: 0 },
+      { label: 'AMD', data: supply.amd, backgroundColor: 'rgba(248,113,113,0.6)', borderColor: 'rgba(248,113,113,1)', fill: '-1', tension: 0.3, borderWidth: 1, pointRadius: 0 },
+      { label: 'Custom ASIC', data: supply.custom, backgroundColor: 'rgba(96,165,250,0.6)', borderColor: 'rgba(96,165,250,1)', fill: '-1', tension: 0.3, borderWidth: 1, pointRadius: 0 },
+    ];
+  } else if (activeTab === 'power') {
+    yTitle = 'GW / ExaFLOPS';
+    stacked = false;
+    const powerScale = p.power / 37;
+    const powerData = POWER_BASELINE.map(v => v * powerScale);
+    const supplyGW = supply.total.map((ef, i) => ef > 0 ? ef / (EXAFLOPS_PER_GW[i] * (p.util / 100)) : 0);
+    secondaryChart.data.datasets = [
+      { label: 'Power Available (GW)', data: powerData, borderColor: 'rgba(52,211,153,1)', backgroundColor: 'rgba(52,211,153,0.1)', fill: true, tension: 0.3, borderWidth: 2, pointRadius: 0 },
+      { label: 'Power Required by Chips (GW)', data: supplyGW, borderColor: 'rgba(251,191,36,1)', backgroundColor: 'rgba(251,191,36,0.1)', fill: true, tension: 0.3, borderWidth: 2, pointRadius: 0 },
+    ];
+  } else if (activeTab === 'tokens') {
+    yTitle = 'Tokens / Day (Trillions)';
+    stacked = false;
+    secondaryChart.data.datasets = [
+      { label: 'Total Token Demand', data: demand.totalTokens, borderColor: 'rgba(248,113,113,1)', backgroundColor: 'rgba(248,113,113,0.1)', fill: true, tension: 0.3, borderWidth: 2, pointRadius: 2 },
+    ];
+  }
+
+  secondaryChart.options.scales.y.stacked = stacked;
+  secondaryChart.options.scales.x.stacked = stacked;
+  if (secondaryChart.options.scales.y.title) {
+    secondaryChart.options.scales.y.title.text = yTitle;
+    secondaryChart.options.scales.y.title.display = true;
+    secondaryChart.options.scales.y.title.color = '#8e92a4';
+  } else {
+    secondaryChart.options.scales.y.title = { display: true, text: yTitle, color: '#8e92a4', font: { size: 11 } };
+  }
+  secondaryChart.update('none');
+}
+
+function updateKPIs(supply, demand) {
+  // End-of-2028 values (index 19)
+  const s28 = supply.total[N-1];
+  const d28 = demand.totalEF[N-1];
+  const gap = s28 - d28;
+  const tokens28 = demand.totalTokens[N-1];
+
+  $('kpi-row').innerHTML = `
+    <div class="kpi">
+      <div class="label">Supply (Q4-28)</div>
+      <div class="value" style="color:var(--green)">${fmt(s28)} EF</div>
+      <div class="sub">Effective ExaFLOPS</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Demand (Q4-28)</div>
+      <div class="value" style="color:var(--red)">${fmt(d28)} EF</div>
+      <div class="sub">Net compute demand</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Gap (Q4-28)</div>
+      <div class="value" style="color:${gap >= 0 ? 'var(--green)' : 'var(--red)'}">${gap >= 0 ? '+' : ''}${fmt(gap)} EF</div>
+      <div class="sub">${gap >= 0 ? 'Surplus' : 'DEFICIT'}</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Token Demand (Q4-28)</div>
+      <div class="value" style="color:var(--orange)">${fmt(tokens28)}T</div>
+      <div class="sub">tokens / day</div>
+    </div>
+  `;
+}
+
+function updateTable(supply, demand) {
+  // Show annual snapshots (Q4 of each year: indices 3, 7, 11, 15, 19)
+  const years = [
+    { label: '2024', idx: 3 },
+    { label: '2025', idx: 7 },
+    { label: '2026', idx: 11 },
+    { label: '2027', idx: 15 },
+    { label: '2028', idx: 19 },
+  ];
+
+  let html = `<thead><tr>
+    <th>Year</th><th>Supply (EF)</th><th>Demand (EF)</th><th>Gap</th>
+    <th>Tokens/Day</th><th>Train Demand</th><th>Infer Demand</th>
+  </tr></thead><tbody>`;
+
+  for (const yr of years) {
+    const s = supply.total[yr.idx];
+    const d = demand.totalEF[yr.idx];
+    const gap = s - d;
+    const cls = gap >= 0 ? 'surplus' : 'deficit';
+    html += `<tr>
+      <td>${yr.label}</td>
+      <td>${fmt(s)}</td>
+      <td>${fmt(d)}</td>
+      <td class="${cls}">${gap >= 0 ? '+' : ''}${fmt(gap)}</td>
+      <td>${fmt(demand.totalTokens[yr.idx])}T</td>
+      <td>${fmt(demand.trainingEF[yr.idx])}</td>
+      <td>${fmt(demand.inferenceEF[yr.idx])}</td>
+    </tr>`;
+  }
+
+  html += '</tbody>';
+  $('metricsTable').innerHTML = html;
+}
+
+function fmt(n) {
+  if (Math.abs(n) >= 1000) return n.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  if (Math.abs(n) >= 100) return n.toFixed(0);
+  if (Math.abs(n) >= 10) return n.toFixed(1);
+  return n.toFixed(2);
+}
+
+// ============================================================
+// SCENARIOS & TABS
+// ============================================================
+function applyScenario(name) {
+  document.querySelectorAll('.scenario-bar .btn').forEach(b => b.classList.remove('active'));
+  $('btn-' + name).classList.add('active');
+
+  if (name === 'custom') {
+    // Don't change sliders, just mark as custom
+    recalculate();
+    return;
+  }
+  const s = SCENARIOS[name];
+  if (s) {
+    writeUI(s);
+    recalculate();
+  }
+}
+
+function switchTab(el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  activeTab = el.dataset.tab;
+  recalculate();
+}
+
+// ============================================================
+// URL HASH SHARING
+// ============================================================
+function updateHash(p) {
+  const params = new URLSearchParams();
+  for (const [k, v] of Object.entries(p)) {
+    if (typeof v === 'boolean') params.set(k, v ? '1' : '0');
+    else params.set(k, String(v));
+  }
+  history.replaceState(null, '', '#' + params.toString());
+}
+
+function loadFromHash() {
+  if (!location.hash || location.hash.length < 2) return false;
+  try {
+    const params = new URLSearchParams(location.hash.slice(1));
+    const s = { ...SCENARIOS.base }; // defaults
+    for (const [k, v] of params.entries()) {
+      if (k in s) {
+        if (typeof s[k] === 'boolean') s[k] = v === '1';
+        else s[k] = +v;
+      }
+    }
+    writeUI(s);
+    document.querySelectorAll('.scenario-bar .btn').forEach(b => b.classList.remove('active'));
+    $('btn-custom').classList.add('active');
+    return true;
+  } catch { return false; }
+}
+
+function copyShareLink() {
+  const url = location.href;
+  navigator.clipboard.writeText(url).then(() => {
+    const toast = $('toast');
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 2000);
+  });
+}
+
+// ============================================================
+// WIRE UP EVENTS
+// ============================================================
+function init() {
+  initCharts();
+
+  // Load from URL hash or use base case
+  if (!loadFromHash()) {
+    writeUI(SCENARIOS.base);
+  }
+
+  // Attach event listeners to all inputs
+  document.querySelectorAll('input[type="range"], input[type="checkbox"]').forEach(el => {
+    el.addEventListener('input', () => {
+      updateLabels();
+      // Mark as custom scenario
+      document.querySelectorAll('.scenario-bar .btn').forEach(b => b.classList.remove('active'));
+      $('btn-custom').classList.add('active');
+      recalculate();
+    });
+  });
+
+  recalculate();
+}
+
+window.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
