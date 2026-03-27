@@ -124,9 +124,7 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:14px; h
     <h3>Supply Constraint Factor</h3>
     <div class="info">CoWoS, HBM, permitting. 1.0 = unconstrained.</div>
     <div class="slider-row"><label>Constraint</label><input type="range" id="s-constraint" min="50" max="100" step="1" value="78"><span class="val" id="v-constraint">0.78</span></div>
-    <h3>Supply Ramp Shape</h3>
-    <div class="info">How buildout is distributed over time. Front-loaded = most capacity early. Back-loaded = late rush.</div>
-    <div class="slider-row"><label>Ramp</label><input type="range" id="s-ramp" min="1" max="9" step="1" value="5"><span class="val" id="v-ramp">Even</span></div>
+    <div class="info" style="margin-top:8px">Supply shape is now driven by project online dates. Toggle projects below to see capacity arrive in chunks.</div>
   </div>
   <div class="proj-panel">
     <h2>Project Library <span style="font-size:10px;color:var(--text2);text-transform:none;letter-spacing:0">(<span id="proj-count">0</span> projects)</span></h2>
@@ -160,70 +158,72 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:14px; h
 </div>
 <div class="toast" id="toast">Link copied</div>
 <script>
+// onlineQ: quarter index (0=Q1-24, 4=Q1-25, 8=Q1-26, 12=Q1-27, 16=Q1-28) when capacity comes online
+// For multi-year builds, MW is split across phases via the phases array [q, mw] pairs
 const PROJECTS = [
   // US HYPERSCALER
-  { cat:'US Hyperscaler', name:'Stargate (OpenAI / SoftBank / Oracle)', loc:'Abilene, TX', mw:1200, costB:100, timeline:'Phase 1: 2026', status:'Under construction', on:true },
-  { cat:'US Hyperscaler', name:'Microsoft US DC Expansion', loc:'WI, IL, VA, AZ, IN', mw:2000, costB:80, timeline:'2025-2027', status:'Under construction', on:true },
-  { cat:'US Hyperscaler', name:'Google US DC Expansion', loc:'MO, OH, AZ, OK, IN, NE', mw:1500, costB:75, timeline:'2025-2027', status:'Under construction', on:true },
-  { cat:'US Hyperscaler', name:'Amazon / AWS US AI DCs', loc:'VA, OR, OH, MS, IN, NY', mw:1800, costB:100, timeline:'2025-2028', status:'Under construction', on:true },
-  { cat:'US Hyperscaler', name:'Meta AI DCs (incl. Louisiana)', loc:'LA, IA, TX, OH', mw:2200, costB:65, timeline:'2026-2028', status:'Under construction', on:true },
-  { cat:'US Hyperscaler', name:'Oracle AI DC Buildout', loc:'Nashville, Abilene, Chicago', mw:800, costB:40, timeline:'2025-2027', status:'Under construction', on:true },
-  { cat:'US Hyperscaler', name:'Apple AI Infrastructure', loc:'US (various)', mw:300, costB:15, timeline:'2025-2028', status:'Under construction', on:true },
+  { cat:'US Hyperscaler', name:'Stargate (OpenAI / SoftBank / Oracle)', loc:'Abilene, TX', mw:1200, costB:100, phases:[[9,300],[11,400],[14,500]], status:'Under construction', on:true },
+  { cat:'US Hyperscaler', name:'Microsoft US DC Expansion', loc:'WI, IL, VA, AZ, IN', mw:2000, costB:80, phases:[[5,200],[7,400],[9,400],[11,400],[13,300],[15,300]], status:'Under construction', on:true },
+  { cat:'US Hyperscaler', name:'Google US DC Expansion', loc:'MO, OH, AZ, OK, IN, NE', mw:1500, costB:75, phases:[[5,150],[7,300],[9,300],[11,300],[13,250],[15,200]], status:'Under construction', on:true },
+  { cat:'US Hyperscaler', name:'Amazon / AWS US AI DCs', loc:'VA, OR, OH, MS, IN, NY', mw:1800, costB:100, phases:[[5,200],[7,300],[9,300],[11,300],[13,300],[15,200],[17,200]], status:'Under construction', on:true },
+  { cat:'US Hyperscaler', name:'Meta AI DCs (incl. Louisiana)', loc:'LA, IA, TX, OH', mw:2200, costB:65, phases:[[8,300],[10,400],[12,500],[14,500],[16,500]], status:'Under construction', on:true },
+  { cat:'US Hyperscaler', name:'Oracle AI DC Buildout', loc:'Nashville, Abilene, Chicago', mw:800, costB:40, phases:[[6,200],[8,200],[10,200],[13,200]], status:'Under construction', on:true },
+  { cat:'US Hyperscaler', name:'Apple AI Infrastructure', loc:'US (various)', mw:300, costB:15, phases:[[7,75],[10,75],[13,75],[16,75]], status:'Under construction', on:true },
 
   // AI-NATIVE CLOUD
-  { cat:'AI-Native Cloud', name:'xAI Colossus (Memphis Phase 1)', loc:'Memphis, TN', mw:150, costB:3, timeline:'Operational Q4 2024', status:'Operational', on:true },
-  { cat:'AI-Native Cloud', name:'xAI Memphis Expansion (1M GPU)', loc:'Memphis, TN', mw:1000, costB:10, timeline:'2026-2027', status:'Announced', on:true },
-  { cat:'AI-Native Cloud', name:'CoreWeave US DCs (14+ sites)', loc:'NJ, TX, IL, VA', mw:600, costB:12, timeline:'2024-2026', status:'Partially operational', on:true },
-  { cat:'AI-Native Cloud', name:'Lambda Labs Expansion', loc:'TX, UT, KS', mw:200, costB:2.3, timeline:'2025-2026', status:'Under construction', on:true },
-  { cat:'AI-Native Cloud', name:'Crusoe Energy AI DCs', loc:'Abilene TX, WY', mw:200, costB:3, timeline:'2025-2026', status:'Under construction', on:true },
-  { cat:'AI-Native Cloud', name:'Applied Digital (Ellendale + Jamestown)', loc:'North Dakota', mw:700, costB:3.6, timeline:'2025-2027', status:'Under construction', on:true },
-  { cat:'AI-Native Cloud', name:'Project Rainier (AWS / Anthropic)', loc:'US (OR or VA)', mw:200, costB:4, timeline:'2025', status:'Under construction', on:true },
-  { cat:'AI-Native Cloud', name:'OpenAI Own DC Plans (non-Stargate)', loc:'US (various)', mw:500, costB:10, timeline:'2026-2028', status:'Announced', on:true },
-  { cat:'AI-Native Cloud', name:'Databricks / Mosaic Compute', loc:'US', mw:100, costB:2, timeline:'2025-2027', status:'Expanding', on:true },
+  { cat:'AI-Native Cloud', name:'xAI Colossus (Memphis Phase 1)', loc:'Memphis, TN', mw:150, costB:3, phases:[[3,150]], status:'Operational', on:true },
+  { cat:'AI-Native Cloud', name:'xAI Memphis Expansion (1M GPU)', loc:'Memphis, TN', mw:1000, costB:10, phases:[[9,300],[11,400],[13,300]], status:'Announced', on:true },
+  { cat:'AI-Native Cloud', name:'CoreWeave US DCs (14+ sites)', loc:'NJ, TX, IL, VA', mw:600, costB:12, phases:[[2,100],[4,150],[6,150],[8,100],[10,100]], status:'Partially operational', on:true },
+  { cat:'AI-Native Cloud', name:'Lambda Labs Expansion', loc:'TX, UT, KS', mw:200, costB:2.3, phases:[[6,100],[9,100]], status:'Under construction', on:true },
+  { cat:'AI-Native Cloud', name:'Crusoe Energy AI DCs', loc:'Abilene TX, WY', mw:200, costB:3, phases:[[7,100],[10,100]], status:'Under construction', on:true },
+  { cat:'AI-Native Cloud', name:'Applied Digital (Ellendale + Jamestown)', loc:'North Dakota', mw:700, costB:3.6, phases:[[5,100],[7,200],[10,200],[13,200]], status:'Under construction', on:true },
+  { cat:'AI-Native Cloud', name:'Project Rainier (AWS / Anthropic)', loc:'US (OR or VA)', mw:200, costB:4, phases:[[6,100],[8,100]], status:'Under construction', on:true },
+  { cat:'AI-Native Cloud', name:'OpenAI Own DC Plans (non-Stargate)', loc:'US (various)', mw:500, costB:10, phases:[[10,150],[13,200],[16,150]], status:'Announced', on:true },
+  { cat:'AI-Native Cloud', name:'Databricks / Mosaic Compute', loc:'US', mw:100, costB:2, phases:[[7,50],[11,50]], status:'Expanding', on:true },
 
   // COLO / INFRA
-  { cat:'Colo / Infra', name:'Blackstone / QTS AI Portfolio', loc:'AZ, TX, IL, VA', mw:500, costB:25, timeline:'2025-2028', status:'Under construction', on:true },
-  { cat:'Colo / Infra', name:'Digital Realty AI Expansion', loc:'VA, TX, IL, NL, SG', mw:400, costB:7, timeline:'2025-2027', status:'Under construction', on:true },
-  { cat:'Colo / Infra', name:'Equinix xScale AI Expansion', loc:'Global', mw:300, costB:5, timeline:'2025-2027', status:'Under construction', on:true },
+  { cat:'Colo / Infra', name:'Blackstone / QTS AI Portfolio', loc:'AZ, TX, IL, VA', mw:500, costB:25, phases:[[6,100],[8,100],[10,100],[13,100],[16,100]], status:'Under construction', on:true },
+  { cat:'Colo / Infra', name:'Digital Realty AI Expansion', loc:'VA, TX, IL, NL, SG', mw:400, costB:7, phases:[[5,100],[8,100],[11,100],[14,100]], status:'Under construction', on:true },
+  { cat:'Colo / Infra', name:'Equinix xScale AI Expansion', loc:'Global', mw:300, costB:5, phases:[[6,75],[9,75],[12,75],[15,75]], status:'Under construction', on:true },
 
-  // NUCLEAR
-  { cat:'Nuclear', name:'Three Mile Island Restart (MSFT)', loc:'Middletown, PA', mw:835, costB:1.6, timeline:'Target: 2028', status:'NRC relicensing', on:true },
-  { cat:'Nuclear', name:'Susquehanna (Talen / AWS)', loc:'Berwick, PA', mw:960, costB:3, timeline:'Phase 1: 2026', status:'Under construction', on:true },
-  { cat:'Nuclear', name:'Palisades Restart (Holtec)', loc:'Covert Twp, MI', mw:800, costB:1.9, timeline:'Target: 2026', status:'Restart underway', on:true },
-  { cat:'Nuclear', name:'Kairos SMR (Google PPA)', loc:'SE US (TBD)', mw:500, costB:2, timeline:'2030+', status:'NRC licensing', on:false },
-  { cat:'Nuclear', name:'NuScale SMR', loc:'US (various)', mw:462, costB:4, timeline:'2029-2030', status:'Seeking customers', on:false },
-  { cat:'Nuclear', name:'Oklo Aurora SMR', loc:'Idaho', mw:15, costB:0.5, timeline:'2027 (optimistic)', status:'NRC application', on:false },
+  // NUCLEAR (chunky — comes online all at once)
+  { cat:'Nuclear', name:'Three Mile Island Restart (MSFT)', loc:'Middletown, PA', mw:835, costB:1.6, phases:[[17,835]], status:'NRC relicensing', on:true },
+  { cat:'Nuclear', name:'Susquehanna (Talen / AWS)', loc:'Berwick, PA', mw:960, costB:3, phases:[[9,480],[14,480]], status:'Under construction', on:true },
+  { cat:'Nuclear', name:'Palisades Restart (Holtec)', loc:'Covert Twp, MI', mw:800, costB:1.9, phases:[[11,800]], status:'Restart underway', on:true },
+  { cat:'Nuclear', name:'Kairos SMR (Google PPA)', loc:'SE US (TBD)', mw:500, costB:2, phases:[], status:'NRC licensing (2030+)', on:false },
+  { cat:'Nuclear', name:'NuScale SMR', loc:'US (various)', mw:462, costB:4, phases:[], status:'Seeking customers (2029+)', on:false },
+  { cat:'Nuclear', name:'Oklo Aurora SMR', loc:'Idaho', mw:15, costB:0.5, phases:[], status:'NRC application (2028+)', on:false },
 
   // MIDDLE EAST
-  { cat:'Middle East', name:'Saudi HUMAIN Mega AI Campus', loc:'Saudi Arabia', mw:1000, costB:100, timeline:'2026-2028', status:'Early construction', on:true },
-  { cat:'Middle East', name:'UAE Stargate / MGX AI Infra', loc:'Abu Dhabi, UAE', mw:500, costB:30, timeline:'2025-2028', status:'Partnerships forming', on:true },
-  { cat:'Middle East', name:'Qatar AI DC Initiative', loc:'Qatar', mw:200, costB:10, timeline:'2026-2028', status:'Announced', on:false },
+  { cat:'Middle East', name:'Saudi HUMAIN Mega AI Campus', loc:'Saudi Arabia', mw:1000, costB:100, phases:[[10,200],[12,300],[15,300],[18,200]], status:'Early construction', on:true },
+  { cat:'Middle East', name:'UAE Stargate / MGX AI Infra', loc:'Abu Dhabi, UAE', mw:500, costB:30, phases:[[8,100],[11,150],[14,150],[17,100]], status:'Partnerships forming', on:true },
+  { cat:'Middle East', name:'Qatar AI DC Initiative', loc:'Qatar', mw:200, costB:10, phases:[[12,100],[16,100]], status:'Announced', on:false },
 
   // ASIA PACIFIC
-  { cat:'Asia Pacific', name:'Japan National AI Compute', loc:'Hokkaido, Chiba, Osaka', mw:300, costB:15, timeline:'2025-2027', status:'Under construction', on:true },
-  { cat:'Asia Pacific', name:'SoftBank Japan AI Supercomputer', loc:'Japan (Hokkaido)', mw:200, costB:4, timeline:'2025-2026', status:'Under construction', on:true },
-  { cat:'Asia Pacific', name:'India AI Mission + Private Sector', loc:'Gujarat, Maharashtra', mw:200, costB:2, timeline:'2025-2027', status:'Announced', on:true },
-  { cat:'Asia Pacific', name:'Singapore AI DC Expansion', loc:'Singapore', mw:300, costB:8, timeline:'2025-2028', status:'Under construction', on:true },
-  { cat:'Asia Pacific', name:'Malaysia (Johor) AI DCs', loc:'Johor, Malaysia', mw:1000, costB:15, timeline:'2025-2028', status:'Under construction', on:true },
-  { cat:'Asia Pacific', name:'Indonesia AI/DC Expansion', loc:'Jakarta, Batam', mw:300, costB:5, timeline:'2025-2028', status:'Announced', on:true },
-  { cat:'Asia Pacific', name:'South Korea AI Compute', loc:'Sejong, Chuncheon', mw:200, costB:5, timeline:'2025-2027', status:'Under construction', on:true },
-  { cat:'Asia Pacific', name:'Australia AI DCs (MSFT, AWS)', loc:'Sydney, Melbourne', mw:200, costB:4, timeline:'2025-2027', status:'Under construction', on:true },
+  { cat:'Asia Pacific', name:'Japan National AI Compute', loc:'Hokkaido, Chiba, Osaka', mw:300, costB:15, phases:[[6,75],[8,75],[11,75],[14,75]], status:'Under construction', on:true },
+  { cat:'Asia Pacific', name:'SoftBank Japan AI Supercomputer', loc:'Japan (Hokkaido)', mw:200, costB:4, phases:[[6,100],[9,100]], status:'Under construction', on:true },
+  { cat:'Asia Pacific', name:'India AI Mission + Private Sector', loc:'Gujarat, Maharashtra', mw:200, costB:2, phases:[[8,50],[11,75],[14,75]], status:'Announced', on:true },
+  { cat:'Asia Pacific', name:'Singapore AI DC Expansion', loc:'Singapore', mw:300, costB:8, phases:[[7,75],[10,75],[13,75],[16,75]], status:'Under construction', on:true },
+  { cat:'Asia Pacific', name:'Malaysia (Johor) AI DCs', loc:'Johor, Malaysia', mw:1000, costB:15, phases:[[6,150],[8,200],[10,200],[12,200],[15,250]], status:'Under construction', on:true },
+  { cat:'Asia Pacific', name:'Indonesia AI/DC Expansion', loc:'Jakarta, Batam', mw:300, costB:5, phases:[[9,100],[12,100],[16,100]], status:'Announced', on:true },
+  { cat:'Asia Pacific', name:'South Korea AI Compute', loc:'Sejong, Chuncheon', mw:200, costB:5, phases:[[6,50],[9,75],[12,75]], status:'Under construction', on:true },
+  { cat:'Asia Pacific', name:'Australia AI DCs (MSFT, AWS)', loc:'Sydney, Melbourne', mw:200, costB:4, phases:[[7,75],[10,75],[13,50]], status:'Under construction', on:true },
 
   // EUROPE
-  { cat:'Europe', name:'EU AI Factories (7+ sites)', loc:'FI, IT, ES, DE, LU, CZ', mw:200, costB:4, timeline:'2025-2027', status:'Procurement', on:true },
-  { cat:'Europe', name:'France AI (Scaleway + OVHcloud + GENCI)', loc:'Paris, Marseille', mw:150, costB:3.5, timeline:'2025-2027', status:'Under construction', on:true },
-  { cat:'Europe', name:'Germany AI (incl. JUPITER exascale)', loc:'Frankfurt, Juelich', mw:100, costB:2, timeline:'2025-2027', status:'Under construction', on:true },
-  { cat:'Europe', name:'UK Sovereign AI DCs', loc:'Northumberland, Scotland', mw:500, costB:10, timeline:'2026-2028', status:'Announced', on:true },
-  { cat:'Europe', name:'UK Isambard-AI + Dawn', loc:'Bristol, Cambridge', mw:15, costB:0.4, timeline:'Operational', status:'Operational', on:true },
-  { cat:'Europe', name:'NVIDIA / Microsoft Nordic AI DCs', loc:'Sweden, Finland', mw:200, costB:3.5, timeline:'2025-2026', status:'Under construction', on:true },
-  { cat:'Europe', name:'Norway Green AI (Green Mountain)', loc:'Norway', mw:150, costB:1, timeline:'2025-2027', status:'Expanding', on:true },
-  { cat:'Europe', name:'Iceland AI/HPC (Verne, atNorth)', loc:'Keflavik, Iceland', mw:100, costB:0.5, timeline:'2025-2027', status:'Expanding', on:true },
-  { cat:'Europe', name:'Canada AI DCs (Alberta, Quebec)', loc:'Canada', mw:300, costB:5, timeline:'2025-2028', status:'Under construction', on:true },
+  { cat:'Europe', name:'EU AI Factories (7+ sites)', loc:'FI, IT, ES, DE, LU, CZ', mw:200, costB:4, phases:[[7,50],[9,50],[11,50],[13,50]], status:'Procurement', on:true },
+  { cat:'Europe', name:'France AI (Scaleway + OVHcloud + GENCI)', loc:'Paris, Marseille', mw:150, costB:3.5, phases:[[6,50],[9,50],[12,50]], status:'Under construction', on:true },
+  { cat:'Europe', name:'Germany AI (incl. JUPITER exascale)', loc:'Frankfurt, Juelich', mw:100, costB:2, phases:[[5,30],[8,35],[11,35]], status:'Under construction', on:true },
+  { cat:'Europe', name:'UK Sovereign AI DCs', loc:'Northumberland, Scotland', mw:500, costB:10, phases:[[10,100],[13,200],[16,200]], status:'Announced', on:true },
+  { cat:'Europe', name:'UK Isambard-AI + Dawn', loc:'Bristol, Cambridge', mw:15, costB:0.4, phases:[[0,15]], status:'Operational', on:true },
+  { cat:'Europe', name:'NVIDIA / Microsoft Nordic AI DCs', loc:'Sweden, Finland', mw:200, costB:3.5, phases:[[6,100],[9,100]], status:'Under construction', on:true },
+  { cat:'Europe', name:'Norway Green AI (Green Mountain)', loc:'Norway', mw:150, costB:1, phases:[[5,50],[8,50],[12,50]], status:'Expanding', on:true },
+  { cat:'Europe', name:'Iceland AI/HPC (Verne, atNorth)', loc:'Keflavik, Iceland', mw:100, costB:0.5, phases:[[6,30],[10,35],[14,35]], status:'Expanding', on:true },
+  { cat:'Europe', name:'Canada AI DCs (Alberta, Quebec)', loc:'Canada', mw:300, costB:5, phases:[[7,75],[10,75],[13,75],[16,75]], status:'Under construction', on:true },
 
   // CHINA
-  { cat:'China', name:'ByteDance AI DCs', loc:'China (various)', mw:500, costB:8, timeline:'2025-2028', status:'Under construction', on:true },
-  { cat:'China', name:'Alibaba Cloud AI DCs', loc:'Hangzhou, Zhangbei, Ulanqab', mw:400, costB:7, timeline:'2025-2028', status:'Under construction', on:true },
-  { cat:'China', name:'China State / Other (East Data West Compute)', loc:'Guizhou, Inner Mongolia, Ningxia', mw:2000, costB:35, timeline:'Ongoing-2028', status:'Under construction', on:true },
+  { cat:'China', name:'ByteDance AI DCs', loc:'China (various)', mw:500, costB:8, phases:[[5,100],[7,100],[9,100],[12,100],[15,100]], status:'Under construction', on:true },
+  { cat:'China', name:'Alibaba Cloud AI DCs', loc:'Hangzhou, Zhangbei, Ulanqab', mw:400, costB:7, phases:[[5,75],[7,75],[10,100],[13,75],[16,75]], status:'Under construction', on:true },
+  { cat:'China', name:'China State / Other (East Data West Compute)', loc:'Guizhou, Inner Mongolia, Ningxia', mw:2000, costB:35, phases:[[2,200],[4,200],[6,250],[8,250],[10,250],[12,250],[14,200],[16,200],[18,200]], status:'Under construction', on:true },
 ];
 
 const QS = [];
@@ -239,21 +239,12 @@ function lerp(v25, v28, i) {
   return v24start + (v25 - v24start) * (i / 4);
 }
 
-// Shaped lerp: ramp=1 front-loaded, ramp=5 even, ramp=9 back-loaded
-function shapedLerp(vStart, vEnd, i, ramp) {
-  if (i <= 4) return vStart;
-  if (i >= 19) return vEnd;
-  const t = (i - 4) / 15; // 0..1
-  const exp = 0.3 + (ramp - 1) * 0.2; // ramp 1->0.3 (front), 5->1.1 (even), 9->1.9 (back)
-  const shaped = Math.pow(t, exp);
-  return vStart + (vEnd - vStart) * shaped;
-}
 
 const SC = {
-  base:   { itCagr:10, aiPct25:10, aiPct28:22, inf25:55, inf28:75, gpuGain:20, margin25:45, margin28:60, eff:6, lag:4, power:37, den25:7, den28:19, util:30, constraint:78, ramp:5 },
-  bull:   { itCagr:14, aiPct25:12, aiPct28:35, inf25:55, inf28:80, gpuGain:25, margin25:45, margin28:65, eff:12, lag:3, power:50, den25:7, den28:25, util:40, constraint:90, ramp:4 },
-  bear:   { itCagr:6,  aiPct25:8,  aiPct28:14, inf25:55, inf28:70, gpuGain:15, margin25:40, margin28:55, eff:4, lag:6, power:25, den25:7, den28:15, util:22, constraint:65, ramp:7 },
-  crunch: { itCagr:12, aiPct25:12, aiPct28:30, inf25:60, inf28:80, gpuGain:18, margin25:40, margin28:50, eff:4, lag:5, power:28, den25:7, den28:16, util:25, constraint:70, ramp:6 },
+  base:   { itCagr:10, aiPct25:10, aiPct28:22, inf25:55, inf28:75, gpuGain:20, margin25:45, margin28:60, eff:6, lag:4, power:37, den25:7, den28:19, util:30, constraint:78 },
+  bull:   { itCagr:14, aiPct25:12, aiPct28:35, inf25:55, inf28:80, gpuGain:25, margin25:45, margin28:65, eff:12, lag:3, power:50, den25:7, den28:25, util:40, constraint:90 },
+  bear:   { itCagr:6,  aiPct25:8,  aiPct28:14, inf25:55, inf28:70, gpuGain:15, margin25:40, margin28:55, eff:4, lag:6, power:25, den25:7, den28:15, util:22, constraint:65 },
+  crunch: { itCagr:12, aiPct25:12, aiPct28:30, inf25:60, inf28:80, gpuGain:18, margin25:40, margin28:50, eff:4, lag:5, power:28, den25:7, den28:16, util:25, constraint:70 },
 };
 
 const EL = id => document.getElementById(id);
@@ -263,7 +254,7 @@ const FIELDS = [
   ['d-margin-25','margin25'],['d-margin-28','margin28'],
   ['d-eff','eff'],['d-lag','lag'],
   ['s-power','power'],['s-den-25','den25'],['s-den-28','den28'],
-  ['s-util','util'],['s-constraint','constraint'],['s-ramp','ramp'],
+  ['s-util','util'],['s-constraint','constraint'],
 ];
 
 function readUI() {
@@ -291,8 +282,6 @@ function labels() {
   EL('v-den-28').textContent = EL('s-den-28').value + ' EF/GW';
   EL('v-util').textContent = EL('s-util').value + '%';
   EL('v-constraint').textContent = (+EL('s-constraint').value / 100).toFixed(2);
-  const r = +EL('s-ramp').value;
-  EL('v-ramp').textContent = r <= 3 ? 'Front' : r <= 6 ? 'Even' : 'Back';
 }
 
 // PROJECT LIBRARY
@@ -304,7 +293,8 @@ function renderProjects(filter) {
     const p = PROJECTS[i];
     if (q && !p.name.toLowerCase().includes(q) && !p.cat.toLowerCase().includes(q) && !p.loc.toLowerCase().includes(q)) continue;
     if (p.cat !== lastCat) { html += `<div class="proj-cat">${p.cat}</div>`; lastCat = p.cat; }
-    html += `<div class="proj-item"><input type="checkbox" data-idx="${i}" ${p.on?'checked':''}><div><div class="proj-name">${p.name}</div><div class="proj-detail">${p.loc} &bull; ${(p.mw/1000).toFixed(1)} GW &bull; $${p.costB}B &bull; ${p.timeline} &bull; ${p.status}</div></div></div>`;
+    const phaseStr = (p.phases||[]).length ? p.phases.map(([q,mw])=>`${QS[q]||'?'}: ${mw}MW`).join(', ') : 'No phases in range';
+    html += `<div class="proj-item"><input type="checkbox" data-idx="${i}" ${p.on?'checked':''}><div><div class="proj-name">${p.name}</div><div class="proj-detail">${p.loc} &bull; ${(p.mw/1000).toFixed(1)} GW total &bull; $${p.costB}B &bull; ${p.status}</div><div class="proj-detail">${phaseStr}</div></div></div>`;
   }
   list.innerHTML = html;
   list.querySelectorAll('input[type=checkbox]').forEach(cb => {
@@ -319,11 +309,11 @@ function updateProjSummary() {
   EL('proj-count').textContent = PROJECTS.length;
 }
 function syncPower() {
-  let mw = 0; PROJECTS.forEach(p => { if (p.on) mw += p.mw; });
-  // 40% realization rate on announced MW, added to existing 8 GW baseline
-  const gw = Math.max(15, Math.min(65, Math.round(8 + (mw / 1000) * 0.40)));
+  // Sum all phased MW from enabled projects (only phases within our timeline)
+  let totalMW = 0;
+  PROJECTS.forEach(p => { if (p.on) (p.phases||[]).forEach(([q, mw]) => { if (q < N) totalMW += mw; }); });
+  const gw = Math.max(15, Math.min(65, Math.round(8 + (totalMW / 1000) * 0.40)));
   EL('s-power').value = gw; labels();
-  // Force chart update since we changed the slider programmatically
   update();
 }
 
@@ -389,9 +379,22 @@ function compute(p) {
     out.demand.push(trainEF + infEF);
   }
 
-  // Supply with shaped ramp
+  // Supply: build cumulative GW from project phases
+  // Start with existing 8 GW baseline, add project MW as they come online
+  const BASE_GW = 8.0;
+  const projGW = new Array(N).fill(0); // incremental GW added per quarter from projects
+  PROJECTS.forEach(proj => {
+    if (!proj.on) return;
+    (proj.phases || []).forEach(([q, mw]) => {
+      if (q >= 0 && q < N) projGW[q] += mw / 1000; // MW to GW
+    });
+  });
+  // Cumulative GW = baseline + running sum of project additions, * realization rate
+  const REAL_RATE = 0.40; // 40% of announced actually built on time
+  let cumProjGW = 0;
   for (let i = 0; i < N; i++) {
-    const powerGW = shapedLerp(8, p.power, i, p.ramp);
+    cumProjGW += projGW[i] * REAL_RATE;
+    const powerGW = BASE_GW + cumProjGW;
     const density = lerp(p.den25, p.den28, i);
     const supply = powerGW * density * (p.util / 100) * (p.constraint / 100);
     out.supply.push(supply);
